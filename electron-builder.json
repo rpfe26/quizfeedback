@@ -1,0 +1,36 @@
+{
+  "appId": "dev.ladigitale.quizfeedback",
+  "productName": "QuizFeedback",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "server/**/*",
+    "electron/**/*",
+    "package.json"
+  ],
+  "mac": {
+    "category": "public.app-category.education",
+    "target": ["dmg", "zip"]
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64", "ia32"]
+      }
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "QuizFeedback"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "category": "Education"
+  }
+}

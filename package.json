@@ -1,0 +1,45 @@
+{
+  "name": "quizfeedback",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Générateur de Quiz H5P avec rétroactions formatives Pascal Pansu & Export LogiQuiz / Digiquiz (La Digitale)",
+  "main": "electron/main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:server": "PORT=3050 node server/server.mjs",
+    "dev:all": "concurrently -k \"npm run dev:server\" \"npm run dev\"",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "start": "PORT=3050 node server/server.mjs",
+    "electron:dev": "concurrently -k \"cross-env PORT=3050 node server/server.mjs\" \"cross-env ELECTRON_DEV=1 vite\" \"cross-env ELECTRON_DEV=1 electron .\"",
+    "electron:build": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.16.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.0.1",
+    "cross-env": "^7.0.3",
+    "electron": "^32.0.1",
+    "electron-builder": "^24.13.3",
+    "postcss": "^8.4.45",
+    "tailwindcss": "^3.4.11",
+    "typescript": "^5.5.3",
+    "vite": "^5.4.3"
+  }
+}

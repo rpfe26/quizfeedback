@@ -1,0 +1,16 @@
+services:
+  quizfeedback:
+    build: .
+    container_name: quizfeedback-app
+    restart: unless-stopped
+    ports:
+      - "3050:3000"
+    volumes:
+      - quizfeedback_data:/app/data
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+
+volumes:
+  quizfeedback_data:
+    driver: local
