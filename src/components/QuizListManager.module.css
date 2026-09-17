@@ -6,51 +6,73 @@
   gap: 1rem;
 }
 
-/* Zone de dépôt */
+/* Zone de dépôt — repérage visuel fort */
 .dropzone {
-  border: 1px dashed var(--color-border-strong);
+  border: 2px dashed var(--color-primary);
   border-radius: var(--radius-sm);
-  background-color: var(--color-surface-subtle);
-  padding: 1.1rem;
+  background-color: var(--color-primary-light);
+  padding: 2rem 1.5rem;
   cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dropzone:hover {
+  border-color: var(--color-primary-hover);
+  background-color: var(--color-primary-light);
+  box-shadow: 0 2px 8px rgba(26, 86, 219, 0.15);
+}
+
+.dropzone:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .dropzoneActive {
-  border-color: var(--color-primary);
+  border-style: solid;
+  border-color: var(--color-primary-hover);
   background-color: var(--color-primary-light);
+  box-shadow: 0 0 0 4px rgba(26, 86, 219, 0.15);
 }
 
 .dropzoneContent {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
+  gap: 1rem;
 }
 
 .dropzoneIconWrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-surface);
-  color: var(--color-text-sub);
+  flex-shrink: 0;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: #ffffff;
 }
 
 .dropzoneTitle {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-apps-darkblue, var(--color-primary-text));
 }
 
 .dropzoneHighlight {
   font-family: var(--font-mono);
-  font-size: 0.9em;
+  font-size: 0.95em;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
 }
 
 .dropzoneSub {
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
+  font-size: 1rem;
+  color: var(--color-primary-text);
+  margin-top: 0.3rem;
 }
 
 /* Panneau liste */

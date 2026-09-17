@@ -17,7 +17,6 @@ interface QuizListManagerProps {
   onExportQuiz: (quiz: H5PQuiz) => void;
   onDeleteQuiz: (quizId: string) => void;
   onFileUpload: (file: File) => void;
-  onCreateNew?: () => void;
   isLoading?: boolean;
 }
 
@@ -27,7 +26,6 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
   onExportQuiz,
   onDeleteQuiz,
   onFileUpload,
-  onCreateNew,
   isLoading
 }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -81,7 +79,7 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
 
         <div className={styles.dropzoneContent}>
           <div className={styles.dropzoneIconWrap}>
-            <Upload style={{ width: 22, height: 22 }} />
+            <Upload style={{ width: 28, height: 28 }} aria-hidden="true" />
           </div>
           <div>
             <h3 className={styles.dropzoneTitle}>
@@ -105,17 +103,6 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
               {quizzes.length}
             </span>
           </div>
-
-          {onCreateNew && (
-            <button
-              type="button"
-              onClick={onCreateNew}
-              className={styles.btnActionPrimary}
-              style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
-            >
-              + Nouveau quiz
-            </button>
-          )}
         </div>
 
         {/* Liste des quiz : un élément par ligne */}

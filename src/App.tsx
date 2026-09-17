@@ -135,50 +135,6 @@ export const App: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleLoadSample = async (sample: Partial<H5PQuiz>) => {
-    try {
-      const res = await fetch('/api/h5p/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(sample)
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        showNotification("Quiz d'exemple Révolution française chargé !");
-        await loadQuizzes();
-        if (data.quiz) {
-          setSelectedQuiz(data.quiz);
-          setActiveView('prompt');
-        }
-      }
-    } catch (e: any) {
-      showNotification("Impossible de charger le modèle : " + e.message);
-    }
-  };
-
-  const handleCreateNew = async () => {
-    const newQuiz: Partial<H5PQuiz> = {
-      title: 'Nouveau Quiz',
-      theme: 'Général',
-      description: 'Quiz interactif avec rétroactions formatives Pascal Pansu.',
-      content: {
-        questions: [
-          {
-            id: 'q_1',
-            question: 'Saisissez ici l’énoncé de votre première question :',
-            type: 'multichoice',
-            answers: [
-              { id: 'ans_1_1', text: 'Option A (Bonne réponse)', correct: true, feedback: 'Bravo pour ce choix !' },
-              { id: 'ans_1_2', text: 'Option B (Distracteur)', correct: false, feedback: 'Prenez le temps de relire la consigne...' }
-            ]
-          }
-        ]
-      }
-    };
-    await handleLoadSample(newQuiz);
-  };
-
   return (
     <div className={styles.appContainer}>
       
@@ -247,7 +203,6 @@ export const App: React.FC = () => {
               }}
               onDeleteQuiz={handleDeleteQuiz}
               onFileUpload={handleFileUpload}
-              onCreateNew={handleCreateNew}
             />
           </div>
         )}
