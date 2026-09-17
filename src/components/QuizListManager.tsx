@@ -6,7 +6,10 @@ import {
   Download, 
   Trash2, 
   Layers,
-  FileQuestion
+  FileQuestion,
+  Wand2,
+  ExternalLink,
+  Info
 } from 'lucide-react';
 import { H5PQuiz } from '../types';
 import styles from './QuizListManager.module.css';
@@ -57,6 +60,40 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
   return (
     <div className={styles.container}>
       
+      {/* Vignette : création du quiz sur Quiz Wizard */}
+      <div className={styles.wizardCard}>
+        <div className={styles.wizardCardIconWrap}>
+          <Wand2 style={{ width: 26, height: 26 }} aria-hidden="true" />
+        </div>
+        <div className={styles.wizardCardBody}>
+          <h2 className={styles.wizardCardTitle}>Je crée mon quiz sur Quiz Wizard</h2>
+          <p className={styles.wizardCardText}>
+            Créez votre QCM sur Quiz Wizard, téléchargez-le au format <span className={styles.dropzoneHighlight}>.h5p</span>, puis déposez-le ci-dessous.
+          </p>
+          <a
+            href="https://app.getquizwizard.com/create-content/source"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.wizardCardLink}
+          >
+            Ouvrir Quiz Wizard
+            <ExternalLink style={{ width: 15, height: 15 }} aria-hidden="true" />
+          </a>
+        </div>
+      </div>
+
+      {/* Note : compte Wooclap éducation */}
+      <div className={styles.wooclapNote} role="note">
+        <Info style={{ width: 16, height: 16, flexShrink: 0 }} aria-hidden="true" />
+        <p>
+          Pas encore de compte ? Créez un <strong>compte Éducation</strong> avec votre adresse académique sur{' '}
+          <a href="https://app.wooclap.com/auth/register?lang=fr" target="_blank" rel="noopener noreferrer">
+            Wooclap
+          </a>
+          .
+        </p>
+      </div>
+
       {/* Zone de Dépôt Drag & Drop */}
       <div
         onDragOver={handleDragOver}
@@ -66,13 +103,13 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
         role="button"
         tabIndex={0}
-        aria-label="Importer un quiz : glissez-déposez un fichier .h5p ou .json, ou appuyez sur Entrée pour parcourir vos fichiers"
+        aria-label="Importer un quiz : glissez-déposez un fichier .h5p, ou appuyez sur Entrée pour parcourir vos fichiers"
         className={`${styles.dropzone} ${isDragging ? styles.dropzoneActive : ''}`}
       >
         <input
           ref={fileInputRef}
           type="file"
-          accept=".h5p,.json"
+          accept=".h5p"
           onChange={handleFileInputChange}
           style={{ display: 'none' }}
         />
@@ -83,7 +120,7 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
           </div>
           <div>
             <h3 className={styles.dropzoneTitle}>
-              Glissez-déposez ici votre quiz exporté (<span className={styles.dropzoneHighlight}>.h5p</span> ou <span className={styles.dropzoneHighlight}>.json</span>)
+              Glissez-déposez ici votre quiz exporté (<span className={styles.dropzoneHighlight}>.h5p</span>)
             </h3>
             <p className={styles.dropzoneSub}>
               ou cliquez pour parcourir les fichiers de votre ordinateur

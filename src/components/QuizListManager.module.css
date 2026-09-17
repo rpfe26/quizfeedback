@@ -6,6 +6,94 @@
   gap: 1rem;
 }
 
+/* Vignette Quiz Wizard */
+.wizardCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  padding: 1.1rem 1.25rem;
+}
+
+.wizardCardIconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.wizardCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.wizardCardTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-apps-darkblue, var(--color-primary-text));
+}
+
+.wizardCardText {
+  font-size: 0.95rem;
+  color: var(--color-text-sub);
+}
+
+.wizardCardLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-start;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.wizardCardLink:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.wizardCardLink:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Note compte Wooclap */
+.wooclapNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-warning, #b45309);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-warning-light, #fef3c7);
+  padding: 0.8rem 1rem;
+  color: var(--color-text-sub);
+}
+
+.wooclapNote p {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.wooclapNote a {
+  color: var(--color-primary-text);
+  font-weight: 600;
+}
+
 /* Zone de dépôt — repérage visuel fort */
 .dropzone {
   border: 2px dashed var(--color-primary);
