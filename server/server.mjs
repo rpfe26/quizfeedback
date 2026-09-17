@@ -11,6 +11,28 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = parseInt(process.env.PORT || '3050', 10);
+// Par défaut, écoute locale uniquement. HOST=0.0.0.0 pour exposer sur le réseau.
+const HOST = process.env.HOST || '127.0.0.1';
+// CORS : '*' par défaut (outil local). CORS_ORIGIN=domaine1,domaine2 pour restreindre.
+const CORS_ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || '*')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
+function corsOriginFor(req) {
+  if (CORS_ALLOWED_ORIGINS.includes('*')) return '*';
+  const origin = req.headers.origin;
+  return CORS_ALLOWED_ORIGINS.includes(origin) ? origin : CORS_ALLOWED_ORIGINS[0];
+}
+
+function securityHeaders() {
+  return {
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer',
+    'X-Frame-Options': 'SAMEORIGIN'
+  };
+}
+
 const DIST_DIR = path.resolve(__dirname, '../dist');
 
 const MIME_TYPES = {
@@ -30,9 +52,10 @@ const MIME_TYPES = {
 function sendJson(res, data, status = 200) {
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': corsOriginFor(res.req),
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
+    'Access-Control-Allow-Headers': 'Content-Type',
+    ...securityHeaders()
   });
   res.end(JSON.stringify(data));
 }
@@ -41,13 +64,16 @@ function sendError(res, msg, status = 400) {
   sendJson(res, { error: msg }, status);
 }
 
+const MAX_BODY_BYTES = 25 * 1024 * 1024; // 25 Mo : large marge pour un .h5p encodé en base64
+
 const server = http.createServer(async (req, res) => {
   // CORS Preflight
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': corsOriginFor(req),
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Headers': 'Content-Type',
+      ...securityHeaders()
     });
     return res.end();
   }
@@ -67,28 +93,28 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
-  // 1b. Téléchargement direct du livrable autonome en 1 seul fichier HTML
-  if (pathname === '/download-standalone' || pathname === '/api/download-standalone') {
-    const standalonePaths = [
-      path.resolve(__dirname, '../quizfeedback-standalone.html'),
-      path.resolve(__dirname, '../dist/quizfeedback-standalone.html'),
-      path.resolve(__dirname, '../public/quizfeedback-standalone.html')
-    ];
-    for (const p of standalonePaths) {
-      if (fs.existsSync(p)) {
-        res.writeHead(200, {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Content-Disposition': 'attachment; filename="quizfeedback-standalone.html"'
-        });
-        return res.end(fs.readFileSync(p));
-      }
-    }
-  }
-
   // 2. API Routes
   if (pathname.startsWith('/api/h5p')) {
     const chunks = [];
-    for await (const chunk of req) chunks.push(chunk);
+    let bodyBytes = 0;
+    let tooLarge = false;
+    for await (const chunk of req) {
+      bodyBytes += chunk.length;
+      if (bodyBytes > MAX_BODY_BYTES) {
+        tooLarge = true;
+        break;
+      }
+      chunks.push(chunk);
+    }
+    if (tooLarge) {
+      res.writeHead(413, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Connection': 'close',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ error: 'Corps de requête trop volumineux (limite : 25 Mo).' }));
+      return;
+    }
     const rawBuffer = Buffer.concat(chunks);
     let body = {};
 
@@ -97,7 +123,9 @@ const server = http.createServer(async (req, res) => {
       if (contentType.includes('application/json')) {
         try {
           body = JSON.parse(rawBuffer.toString('utf-8'));
-        } catch (e) {}
+        } catch (e) {
+          return sendError(res, 'Corps de requête JSON invalide.', 400);
+        }
       }
     }
 
@@ -141,12 +169,13 @@ const server = http.createServer(async (req, res) => {
 
         return sendJson(res, { quizzes });
       } catch (err) {
-        return sendError(res, err.message, 500);
+        console.error('[QuizFeedback] Erreur liste quiz:', err);
+        return sendError(res, 'Erreur interne lors de la lecture des quiz.', 500);
       }
     }
 
     // GET /api/h5p/quiz/:id : Détail complet
-    if (pathname.startsWith('/api/h5p/quiz/') && (req.method === 'GET' || req.method === 'HEAD') && !pathname.includes('/export')) {
+    if (pathname.startsWith('/api/h5p/quiz/') && (req.method === 'GET' || req.method === 'HEAD') && !pathname.includes('/export') && !pathname.endsWith('/attempts')) {
       const quizId = pathname.replace('/api/h5p/quiz/', '').trim();
       const row = db.prepare('SELECT * FROM h5p_quizzes WHERE id = ?').get(quizId);
       if (!row) return sendError(res, 'Quiz introuvable', 404);
@@ -201,6 +230,13 @@ const server = http.createServer(async (req, res) => {
       const finalTitle = (title && title.trim()) || parsed.title || 'Quiz H5P';
       const finalTheme = (theme && theme.trim()) || parsed.theme || 'Général';
       const finalOptions = { ...parsed.options, ...(options || {}) };
+
+      // Refuser les imports sans contenu exploitable plutôt que créer un quiz vide
+      const hasCards = Array.isArray(parsed.content?.cards) && parsed.content.cards.length > 0;
+      const hasQuestions = Array.isArray(parsed.content?.questions) && parsed.content.questions.length > 0;
+      if (!hasCards && !hasQuestions) {
+        return sendError(res, "Aucune question exploitable n'a été trouvée dans le fichier. Vérifiez qu'il s'agit bien d'un export H5P ou JSON de Quiz Wizard.", 400);
+      }
 
       db.prepare(`
         INSERT INTO h5p_quizzes (id, type, title, theme, classe_cible, description, content_json, options_json)
@@ -267,6 +303,9 @@ const server = http.createServer(async (req, res) => {
     // DELETE /api/h5p/quiz/:id : Suppression
     if (pathname.startsWith('/api/h5p/quiz/') && req.method === 'DELETE') {
       const quizId = pathname.replace('/api/h5p/quiz/', '').trim();
+      const row = db.prepare('SELECT id FROM h5p_quizzes WHERE id = ?').get(quizId);
+      if (!row) return sendError(res, 'Quiz introuvable', 404);
+
       db.prepare('DELETE FROM h5p_attempts WHERE quiz_id = ?').run(quizId);
       db.prepare('DELETE FROM h5p_quizzes WHERE id = ?').run(quizId);
       return sendJson(res, { success: true, message: 'Quiz supprimé avec succès' });
@@ -301,7 +340,8 @@ const server = http.createServer(async (req, res) => {
           'Content-Type': 'application/zip',
           'Content-Disposition': `attachment; filename="${encodeURIComponent(safeFilename)}"`,
           'Content-Length': h5pZipBuffer.length,
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': corsOriginFor(req),
+          ...securityHeaders()
         });
         if (req.method === 'HEAD') return res.end();
         return res.end(h5pZipBuffer);
@@ -326,7 +366,8 @@ const server = http.createServer(async (req, res) => {
           'Content-Type': 'application/zip',
           'Content-Disposition': `attachment; filename="${encodeURIComponent(safeFilename)}"`,
           'Content-Length': h5pZipBuffer.length,
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': corsOriginFor(req),
+          ...securityHeaders()
         });
         return res.end(h5pZipBuffer);
       } catch (err) {
@@ -338,8 +379,21 @@ const server = http.createServer(async (req, res) => {
     // POST /api/h5p/attempt : Enregistrement d'un test
     if (pathname === '/api/h5p/attempt' && req.method === 'POST') {
       const { quizId, studentName, score, maxScore, durationSeconds, answers } = body;
+
+      const quizRow = db.prepare('SELECT id FROM h5p_quizzes WHERE id = ?').get(quizId);
+      if (!quizRow) return sendError(res, 'Quiz introuvable', 404);
+
+      const numScore = Number(score);
+      const numMax = Number(maxScore);
+      if (!Number.isFinite(numScore) || !Number.isFinite(numMax) || numMax <= 0 || numScore < 0 || numScore > numMax) {
+        return sendError(res, 'Score invalide : score et maxScore doivent être des nombres, avec 0 ≤ score ≤ maxScore.', 400);
+      }
+      const numDuration = Number.isFinite(Number(durationSeconds)) && Number(durationSeconds) >= 0
+        ? Math.round(Number(durationSeconds))
+        : 0;
+
       const attemptId = `att_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 4)}`;
-      const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+      const percentage = Math.round((numScore / numMax) * 100);
 
       db.prepare(`
         INSERT INTO h5p_attempts (id, quiz_id, student_name, score, max_score, percentage, duration_seconds, answers_json)
@@ -347,16 +401,29 @@ const server = http.createServer(async (req, res) => {
       `).run(
         attemptId,
         quizId,
-        studentName || 'Testeur',
-        score || 0,
-        maxScore || 1,
+        typeof studentName === 'string' && studentName.trim() ? studentName.trim() : 'Testeur',
+        numScore,
+        numMax,
         percentage,
-        durationSeconds || 0,
+        numDuration,
         JSON.stringify(answers || [])
       );
 
       return sendJson(res, { success: true, attemptId });
     }
+
+    // GET /api/h5p/quiz/:id/attempts : Historique des tentatives d'un quiz
+    if (pathname.startsWith('/api/h5p/quiz/') && pathname.endsWith('/attempts') && req.method === 'GET') {
+      const quizId = pathname.replace('/api/h5p/quiz/', '').replace(/\/attempts$/, '').trim();
+      const quizRow = db.prepare('SELECT id FROM h5p_quizzes WHERE id = ?').get(quizId);
+      if (!quizRow) return sendError(res, 'Quiz introuvable', 404);
+
+      const rows = db.prepare('SELECT * FROM h5p_attempts WHERE quiz_id = ? ORDER BY created_at DESC').all(quizId);
+      return sendJson(res, { attempts: rows });
+    }
+
+    // Aucune route API correspondante : répondre 404 JSON (pas le frontend)
+    return sendError(res, 'Route API inconnue : ' + req.method + ' ' + pathname, 404);
   }
 
   // 3. Fichiers statiques dist/ (Frontend React)
@@ -371,13 +438,13 @@ const server = http.createServer(async (req, res) => {
       const ext = path.extname(filePath).toLowerCase();
       const contentType = MIME_TYPES[ext] || 'application/octet-stream';
       const content = fs.readFileSync(filePath);
-      res.writeHead(200, { 'Content-Type': contentType });
+      res.writeHead(200, { 'Content-Type': contentType, ...securityHeaders() });
       return res.end(content);
     }
   }
 
   // Fallback si pas de frontend buildé
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', ...securityHeaders() });
   res.end(`
     <!doctype html>
     <html>
@@ -390,8 +457,21 @@ const server = http.createServer(async (req, res) => {
   `);
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`[QuizFeedback] Serveur démarré avec succès sur http://0.0.0.0:${PORT}`);
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[QuizFeedback] Le port ${PORT} est déjà utilisé. Un autre QuizFeedback tourne probablement.`);
+    console.error(`           Lancez le serveur sur un autre port : PORT=<autre-port> node server/server.mjs`);
+    process.exit(1);
+  }
+  throw err;
+});
+
+server.listen(PORT, HOST, () => {
+  const shownHost = HOST === '0.0.0.0' ? '<adresse-ip-de-la-machine>' : HOST;
+  console.log(`[QuizFeedback] Serveur démarré sur http://${shownHost}:${PORT}`);
+  if (HOST === '0.0.0.0') {
+    console.log('[QuizFeedback] Accessible depuis le réseau local (HOST=0.0.0.0).');
+  }
 });
 
 export default server;

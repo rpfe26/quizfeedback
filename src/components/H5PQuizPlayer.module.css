@@ -1,481 +1,324 @@
-/* Styles pour H5PQuizPlayer.tsx */
-.playerCard {
-  background-color: var(--color-surface);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-xs);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  max-width: 48rem;
-  margin: 0 auto;
-}
+/* Simulateur élève - version simple */
 
-.header {
-  padding: 1rem 1.25rem;
-  background-color: var(--color-surface);
-  color: var(--color-text-main);
-  border-bottom: 1px solid var(--color-border-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.headerLeft {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.questionNumBadge {
-  width: 2rem;
-  height: 2rem;
-  border-radius: var(--radius-md);
-  background-color: var(--color-primary-light);
-  color: var(--color-apps-blue);
-  border: 1px solid var(--color-primary-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-  font-size: 0.8rem;
-}
-
-.headerSub {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  font-weight: 800;
-  color: var(--color-text-muted);
-  letter-spacing: 0.05em;
-  display: block;
-}
-
-.headerTitle {
-  font-size: 0.88rem;
-  font-weight: 800;
-  color: var(--color-apps-darkblue);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 20rem;
-}
-
-@media (min-width: 640px) {
-  .headerTitle {
-    max-width: 28rem;
-  }
-}
-
-.headerProgress {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--color-dark-muted);
-}
-
-.progressBarTrack {
-  width: 100%;
-  background-color: var(--color-surface-muted);
-  height: 6px;
-}
-
-.progressBarFill {
-  background-color: var(--color-warning);
-  height: 6px;
-  transition: width 0.3s ease;
-}
-
-.contentBody {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.questionStatement {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: var(--color-text-main);
-  line-height: var(--line-height-base);
-}
-
-.optionsList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-}
-
-.optionButton {
-  width: 100%;
-  padding: 0.85rem 1rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border);
-  text-align: left;
-  font-size: 0.85rem;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  transition: all var(--transition-fast);
-  cursor: pointer;
-}
-
-.optionButtonDefault {
-  border-color: var(--color-border);
-  background-color: var(--color-surface);
-  color: var(--color-text-main);
-}
-
-.optionButtonDefault:hover {
-  background-color: var(--color-surface-subtle);
-}
-
-.optionButtonSelected {
-  border-color: var(--color-warning);
-  background-color: var(--color-warning-light);
-  color: var(--color-warning-text);
-  font-weight: 700;
-  box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.2);
-}
-
-.optionButtonCorrect {
-  border-color: var(--color-success);
-  background-color: var(--color-success-light);
-  color: var(--color-success-text);
-  font-weight: 700;
-}
-
-.optionButtonWrong {
-  border-color: var(--color-error);
-  background-color: var(--color-error-light);
-  color: var(--color-error-text);
-  font-weight: 600;
-}
-
-.optionButtonDimmed {
-  border-color: var(--color-border);
-  background-color: var(--color-surface-subtle);
-  color: var(--color-text-light);
-  opacity: 0.6;
-}
-
-.optionLetter {
-  width: 1.35rem;
-  height: 1.35rem;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-size: 0.7rem;
-  font-weight: 800;
-  margin-top: 0.1rem;
-  border: 1px solid var(--color-border-strong);
-  color: var(--color-text-sub);
-}
-
-.optionLetterSelected {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary);
-  color: #ffffff;
-}
-
-.optionLetterCorrect {
-  border-color: var(--color-success);
-  background-color: var(--color-success);
-  color: #ffffff;
-}
-
-.optionLetterWrong {
-  border-color: var(--color-error);
-  background-color: var(--color-error);
-  color: #ffffff;
-}
-
-.optionText {
-  flex: 1;
-  line-height: 1.4;
-}
-
-/* Feedback box */
-.feedbackBox {
-  padding: 1rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid;
-  font-size: 0.78rem;
-  line-height: var(--line-height-base);
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  animation: fadeIn 0.18s ease-out forwards;
-}
-
-.feedbackBoxSuccess {
-  background-color: var(--color-success-light);
-  border-color: var(--color-success-border);
-  color: var(--color-success-text);
-}
-
-.feedbackBoxRegulation {
-  background-color: var(--color-purple-light);
-  border-color: var(--color-purple-border);
-  color: var(--color-purple-text);
-}
-
-.feedbackHeader {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 900;
-}
-
-.feedbackContent {
-  padding-left: 1.5rem;
-  font-weight: 600;
-}
-
-.feedbackReminder {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(124, 58, 237, 0.2);
-  padding-left: 1.5rem;
-  color: var(--color-text-sub);
-}
-
-/* Player Footer */
-.playerFooter {
-  padding: 1rem 1.25rem;
-  background-color: var(--color-surface-subtle);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.btnPrev {
-  padding: 0.5rem 0.85rem;
-  border-radius: var(--radius-lg);
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-sub);
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  transition: background-color var(--transition-fast);
-}
-
-.btnPrev:hover {
-  background-color: var(--color-surface-muted);
-}
-
-.btnValidate {
-  padding: 0.65rem 1.4rem;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-primary);
-  color: #ffffff;
-  font-weight: 800;
-  font-size: 0.8rem;
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-fast);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.btnValidate:hover {
-  background-color: var(--color-primary-hover);
-  transform: translateY(-1px);
-}
-
-.btnNext {
-  padding: 0.65rem 1.4rem;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-primary);
-  color: #ffffff;
-  font-weight: 800;
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-fast);
-  cursor: pointer;
-}
-
-.btnNext:hover {
-  background-color: var(--color-primary-hover);
-  transform: translateY(-1px);
-}
-
-.btnRetry {
-  padding: 0.55rem 1rem;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  color: var(--color-text-sub);
-  font-size: 0.75rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.btnRetry:hover {
-  background-color: var(--color-surface-subtle);
-  border-color: var(--color-border-strong);
-}
-
-/* Finish Screen */
+.playerCard,
 .finishCard {
-  background-color: var(--color-surface);
-  border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-xs);
-  padding: 2rem;
-  max-width: 40rem;
-  margin: 0 auto;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+}
+
+.finishCard {
+  padding: 1.5rem 1rem;
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  animation: fadeIn 0.18s ease-out forwards;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .trophyWrap {
-  width: 4rem;
-  height: 4rem;
-  border-radius: var(--radius-xl);
-  background-color: var(--color-warning-light);
   color: var(--color-warning);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-  box-shadow: var(--shadow-xs);
 }
 
 .finishTitle {
-  font-size: 1.3rem;
-  font-weight: 900;
-  color: var(--color-text-main);
+  font-size: 1.2rem;
+  font-weight: 700;
 }
 
 .finishSubtitle {
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   color: var(--color-text-muted);
-  margin-top: 0.25rem;
 }
 
 .scoreBox {
-  padding: 1.5rem;
-  border-radius: var(--radius-xl);
-  background-color: var(--color-surface-subtle);
   border: 1px solid var(--color-border);
-  display: inline-block;
-  min-width: 15rem;
-  margin: 0 auto;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: center;
 }
 
 .scoreNumber {
-  font-size: 2.5rem;
-  font-weight: 900;
-  color: var(--color-text-main);
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 
 .scoreDenom {
-  font-size: 1.2rem;
-  color: var(--color-text-light);
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
 }
 
 .scorePercent {
-  font-size: 0.78rem;
-  font-weight: 700;
-  margin-top: 0.25rem;
-  color: var(--color-text-sub);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.passBadgeSuccess,
+.passBadgeWarning {
+  display: inline-block;
+  font-size: 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.5rem;
 }
 
 .passBadgeSuccess {
-  padding: 0.3rem 0.85rem;
-  border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 800;
-  background-color: var(--color-success-light);
-  color: var(--color-success-text);
-  display: inline-block;
-  margin-top: 0.5rem;
+  color: var(--color-success);
+  border-color: var(--color-success);
 }
 
 .passBadgeWarning {
-  padding: 0.3rem 0.85rem;
-  border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 800;
-  background-color: var(--color-warning-light);
-  color: var(--color-warning-text);
-  display: inline-block;
-  margin-top: 0.5rem;
+  color: var(--color-warning);
+  border-color: var(--color-warning);
 }
 
 .finishActionRow {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  gap: 0.5rem;
   justify-content: center;
-  gap: 0.75rem;
 }
 
-.btnReplay {
-  padding: 0.55rem 1rem;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border-strong);
-  background-color: var(--color-surface);
-  color: var(--color-text-sub);
-  font-weight: 700;
-  font-size: 0.78rem;
+/* Header */
+.header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: background-color var(--transition-fast);
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-wrap: wrap;
 }
 
-.btnReplay:hover {
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.questionNumBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.headerSub {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.headerTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.headerProgress {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.progressBarTrack {
+  height: 0.4rem;
+  background-color: var(--color-surface-muted);
+}
+
+.progressBarFill {
+  height: 100%;
+  background-color: var(--color-primary);
+}
+
+/* Question */
+.contentBody {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.questionStatement {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.optionButton {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  text-align: left;
+}
+
+.optionButton:disabled {
+  cursor: default;
+}
+
+.optionButtonDefault:hover,
+.optionButtonSelected {
+  border-color: var(--color-primary);
+}
+
+.optionButtonSelected {
+  background-color: var(--color-primary-light);
+}
+
+.optionButtonCorrect {
+  border-color: var(--color-success);
+  background-color: var(--color-success-light);
+}
+
+.optionButtonWrong {
+  border-color: var(--color-error);
+  background-color: var(--color-error-light);
+}
+
+.optionButtonDimmed {
+  opacity: 0.65;
+}
+
+.optionLetter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.optionLetterDefault {
   background-color: var(--color-surface-subtle);
 }
 
+.optionLetterSelected {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.optionLetterCorrect {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.optionLetterWrong {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.optionText {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+/* Feedback */
+.feedbackBox {
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem;
+}
+
+.feedbackBoxSuccess {
+  border-left-color: var(--color-success);
+  background-color: var(--color-success-light);
+}
+
+.feedbackBoxRegulation {
+  border-left-color: var(--color-purple);
+  background-color: var(--color-purple-light);
+}
+
+.feedbackHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.feedbackContent {
+  font-size: 0.88rem;
+}
+
+.feedbackReminder {
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--color-border);
+  font-size: 0.9rem;
+  color: var(--color-text-sub);
+}
+
+/* Footer */
+.playerFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-top: 1px solid var(--color-border-subtle);
+  flex-wrap: wrap;
+}
+
+/* Buttons */
+.btnNext,
+.btnReplay,
+.btnPublishFromPlayer,
+.btnValidate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.btnPrev,
+.btnRetry,
 .btnAdjustFeedbacks {
-  padding: 0.55rem 1rem;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-purple);
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 0.78rem;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  box-shadow: var(--shadow-2xs);
-  transition: background-color var(--transition-fast);
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text-main);
+  font-size: 0.9rem;
 }
 
+.btnPrev:disabled {
+  cursor: default;
+}
+
+.btnPrev:hover:not(:disabled),
+.btnRetry:hover,
 .btnAdjustFeedbacks:hover {
-  background-color: var(--color-purple-hover);
-}
-
-.btnPublishFromPlayer {
-  padding: 0.55rem 1rem;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-success);
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 0.78rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: var(--shadow-2xs);
-  transition: background-color var(--transition-fast);
-}
-
-.btnPublishFromPlayer:hover {
-  background-color: var(--color-success-hover);
+  border-color: var(--color-text-main);
 }

@@ -3,6 +3,7 @@ import {
   Download, 
   ExternalLink, 
   CheckCircle2, 
+  AlertTriangle, 
   Sparkles, 
   Share2, 
   ArrowLeft,
@@ -26,10 +27,12 @@ export const ExportView: React.FC<ExportViewProps> = ({
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const handleDownloadH5P = async () => {
     setIsExporting(true);
     setDownloadSuccess(false);
+    setDownloadError(null);
 
     try {
       const res = await fetch(`/api/h5p/quiz/${quiz.id}/export`);
@@ -49,7 +52,7 @@ export const ExportView: React.FC<ExportViewProps> = ({
       }
       setDownloadSuccess(true);
     } catch (err: any) {
-      alert("Échec de l'exportation H5P : " + err.message);
+      setDownloadError("Échec de l'exportation H5P : " + err.message);
     } finally {
       setIsExporting(false);
     }
@@ -168,6 +171,13 @@ export const ExportView: React.FC<ExportViewProps> = ({
               <div className={styles.downloadSuccess}>
                 <CheckCircle2 style={{ width: 16, height: 16 }} />
                 <span>Fichier .H5P téléchargé avec succès dans vos Téléchargements !</span>
+              </div>
+            )}
+
+            {downloadError && (
+              <div className={styles.downloadError} role="alert">
+                <AlertTriangle style={{ width: 16, height: 16 }} />
+                <span>{downloadError}</span>
               </div>
             )}
           </div>

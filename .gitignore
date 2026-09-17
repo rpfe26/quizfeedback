@@ -2,8 +2,7 @@ node_modules
 dist
 dist-electron
 release
-data/*.db
-data/*.db-journal
+data
 .DS_Store
 *.log
 .env

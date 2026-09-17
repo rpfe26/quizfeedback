@@ -1,129 +1,121 @@
 /* ==========================================================================
-   QuizFeedback - Global Reset, CSS Custom Properties & DYS Mode
-   Pure CSS without Tailwind CSS dependency
+   QuizFeedback - Version simple et basique
    ========================================================================== */
 
-/* Modern CSS Reset */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* Focus visible : navigation clavier accessible sans gêner la souris */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 :root {
-  /* Fonts & Typography */
-  --font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  
-  --line-height-base: 1.5;
-  --letter-spacing-base: -0.01em;
-  --word-spacing-base: 0;
+  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-mono: ui-monospace, Menlo, Consolas, monospace;
 
-  /* Apps Education Palette */
-  --color-bg: #f4f6f9;
+  --line-height-base: 1.6;
+  --letter-spacing-base: normal;
+  --word-spacing-base: normal;
+
+  /* Neutral palette */
+  --color-bg: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-subtle: #f8fafc;
-  --color-surface-muted: #e5e7eb;
-  --color-text-main: #1e293b;
-  --color-text-title: #000091; /* Bleu France / Apps Education */
-  --color-text-title-dark: #00246b;
-  --color-text-sub: #475569;
-  --color-text-muted: #64748b;
-  --color-text-light: #94a3b8;
-  --color-border: #e2e8f0;
-  --color-border-subtle: #f1f5f9;
-  --color-border-strong: #cbd5e1;
+  --color-surface-subtle: #f7f7f7;
+  --color-surface-muted: #eeeeee;
+  --color-text-main: #111111;
+  --color-text-title: #111111;
+  --color-text-title-dark: #111111;
+  --color-text-sub: #333333;
+  --color-text-muted: #666666;
+  --color-text-light: #888888;
+  --color-border: #cccccc;
+  --color-border-subtle: #e0e0e0;
+  --color-border-strong: #999999;
 
-  /* Apps Education Brand Colors */
-  --color-apps-blue: #000091;
-  --color-apps-darkblue: #00246b;
-  --color-apps-orange: #ff6600; /* Active tab indicator */
-  --color-apps-orange-hover: #e65a00;
-  --color-apps-cyan: #0090f5;
+  /* Accent */
+  --color-apps-blue: #1a56db;
+  --color-apps-darkblue: #1a56db;
+  --color-apps-orange: #1a56db;
+  --color-apps-orange-hover: #1444aa;
+  --color-apps-cyan: #1a56db;
 
-  /* Primary State Blue */
-  --color-primary: #000091;
-  --color-primary-hover: #000074;
-  --color-primary-light: #f0f4ff;
-  --color-primary-border: #d4e0fc;
-  --color-primary-text: #000091;
+  --color-primary: #1a56db;
+  --color-primary-hover: #1444aa;
+  --color-primary-light: #eef2ff;
+  --color-primary-border: #cccccc;
+  --color-primary-text: #1a56db;
 
-  /* Success / Status badges (e.g. "membre", "administrateur") */
-  --color-success: #16a34a;
-  --color-success-hover: #15803d;
-  --color-success-light: #f0fdf4;
-  --color-success-border: #bbf7d0;
-  --color-success-text: #16a34a;
+  --color-success: #1a7f37;
+  --color-success-hover: #1a7f37;
+  --color-success-light: #eef7f0;
+  --color-success-border: #cccccc;
+  --color-success-text: #1a7f37;
 
-  /* Warning / Amber */
-  --color-warning: #d97706;
-  --color-warning-hover: #b45309;
-  --color-warning-light: #fffbeb;
-  --color-warning-border: #fde68a;
-  --color-warning-text: #92400e;
+  --color-warning: #9a6700;
+  --color-warning-hover: #9a6700;
+  --color-warning-light: #fff8e6;
+  --color-warning-border: #cccccc;
+  --color-warning-text: #9a6700;
 
-  /* Error / Red */
-  --color-error: #dc2626;
-  --color-error-hover: #b91c1c;
-  --color-error-light: #fef2f2;
-  --color-error-border: #fecaca;
-  --color-error-text: #991b1b;
+  --color-error: #b3261e;
+  --color-error-hover: #b3261e;
+  --color-error-light: #fdf0ef;
+  --color-error-border: #cccccc;
+  --color-error-text: #b3261e;
 
-  /* Indigo */
-  --color-indigo: #4338ca;
-  --color-indigo-hover: #3730a3;
+  --color-indigo: #1a56db;
+  --color-indigo-hover: #1444aa;
   --color-indigo-light: #eef2ff;
-  --color-indigo-border: #c7d2fe;
-  --color-indigo-text: #3730a3;
+  --color-indigo-border: #cccccc;
+  --color-indigo-text: #1a56db;
 
-  /* Teal (DigiQuiz / La Digitale) */
-  --color-teal: #0d9488;
-  --color-teal-hover: #0f766e;
-  --color-teal-light: #f0fdfa;
-  --color-teal-border: #99f6e4;
-  --color-teal-text: #115e59;
+  --color-teal: #1a56db;
+  --color-teal-hover: #1444aa;
+  --color-teal-light: #eef2ff;
+  --color-teal-border: #cccccc;
+  --color-teal-text: #1a56db;
 
-  /* Purple / Pansu Feedback */
-  --color-purple: #6d28d9;
-  --color-purple-hover: #5b21b6;
+  --color-purple: #5b21b6;
+  --color-purple-hover: #4c1d95;
   --color-purple-light: #f5f3ff;
-  --color-purple-border: #ddd6fe;
+  --color-purple-border: #cccccc;
   --color-purple-text: #5b21b6;
 
-  /* Shadows */
-  --shadow-2xs: 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  /* No shadows, no rounded pills in the simple version */
+  --shadow-2xs: none;
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
 
-  /* Border Radii (matching apps.education rounded corners) */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
-  --radius-full: 9999px;
+  --radius-xs: 3px;
+  --radius-sm: 3px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 3px;
+  --radius-2xl: 3px;
+  --radius-full: 3px;
 
-  /* Transitions */
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.2s ease;
+  --transition-fast: none;
+  --transition-normal: none;
 }
 
 html, body {
   min-height: 100%;
   font-family: var(--font-family);
-  font-size: 15px;
+  font-size: 17px;
   line-height: var(--line-height-base);
-  letter-spacing: var(--letter-spacing-base);
-  word-spacing: var(--word-spacing-base);
   background-color: var(--color-bg);
   color: var(--color-text-main);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 button {
@@ -142,52 +134,17 @@ input, textarea, select {
 }
 
 a {
-  color: inherit;
-  text-decoration: none;
+  color: var(--color-primary);
+  text-decoration: underline;
 }
 
-/* ==========================================================================
-   DYS Mode (Lecture adaptée, contrastes apaisants, espacement généreux)
-   ========================================================================== */
+textarea {
+  resize: vertical;
+}
+
+/* DYS mode: only adjusts spacing, no visual theme */
 body.dys-mode {
-  --font-family: 'Lexend', sans-serif !important;
-  --line-height-base: 1.8 !important;
-  --letter-spacing-base: 0.04em !important;
-  --word-spacing-base: 0.1em !important;
-  --color-bg: #FAF9F6 !important;
-  --color-surface: #FFFEFD !important;
-  --color-surface-subtle: #F4F1EA !important;
-  --color-text-main: #1e293b !important;
-  background-color: var(--color-bg) !important;
-}
-
-body.dys-mode p,
-body.dys-mode span,
-body.dys-mode li,
-body.dys-mode label,
-body.dys-mode button,
-body.dys-mode input,
-body.dys-mode textarea,
-body.dys-mode div {
-  line-height: var(--line-height-base);
-  letter-spacing: var(--letter-spacing-base);
-  word-spacing: var(--word-spacing-base);
-}
-
-/* ==========================================================================
-   Animations
-   ========================================================================== */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.18s ease-out forwards;
+  --line-height-base: 1.8;
+  --letter-spacing-base: 0.03em;
+  --word-spacing-base: 0.08em;
 }

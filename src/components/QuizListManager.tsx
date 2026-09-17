@@ -65,6 +65,10 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
+        role="button"
+        tabIndex={0}
+        aria-label="Importer un quiz : glissez-déposez un fichier .h5p ou .json, ou appuyez sur Entrée pour parcourir vos fichiers"
         className={`${styles.dropzone} ${isDragging ? styles.dropzoneActive : ''}`}
       >
         <input
@@ -183,31 +187,30 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
                       type="button"
                       onClick={() => onSelectQuiz(quiz, 'play')}
                       className={styles.btnActionIcon}
+                      aria-label={`Simuler et tester le quiz ${quiz.title}`}
                       title="Simuler et tester"
                     >
-                      <Play style={{ width: 14, height: 14, fill: 'currentColor' }} />
+                      <Play style={{ width: 14, height: 14, fill: 'currentColor' }} aria-hidden="true" />
                     </button>
 
                     <button
                       type="button"
                       onClick={() => onExportQuiz(quiz)}
                       className={styles.btnActionIcon}
+                      aria-label={`Exporter le quiz ${quiz.title}`}
                       title="Étape 4 : Exporter et diffuser"
                     >
-                      <Download style={{ width: 14, height: 14 }} />
+                      <Download style={{ width: 14, height: 14 }} aria-hidden="true" />
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm(`Supprimer le quiz "${quiz.title}" ?`)) {
-                          onDeleteQuiz(quiz.id);
-                        }
-                      }}
+                      onClick={() => onDeleteQuiz(quiz.id)}
                       className={`${styles.btnActionIcon} ${styles.btnActionDelete}`}
+                      aria-label={`Supprimer le quiz ${quiz.title}`}
                       title="Supprimer"
                     >
-                      <Trash2 style={{ width: 14, height: 14 }} />
+                      <Trash2 style={{ width: 14, height: 14 }} aria-hidden="true" />
                     </button>
                   </div>
                 </div>

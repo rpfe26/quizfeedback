@@ -3,17 +3,36 @@ const path = require('node:path');
 const http = require('node:http');
 
 let mainWindow = null;
-let serverProcess = null;
 const PORT = process.env.PORT || 3050;
 
-// Démarrer le serveur interne pour l'accès complet aux APIs H5P et SQLite
+// Démarrer le serveur interne (APIs H5P + SQLite embarquées).
+// L'import déclenche server.listen() : on sonde ensuite le port avant d'ouvrir la fenêtre.
 async function startInternalServer() {
   try {
-    const serverModule = await import('../server/server.mjs');
-    console.log('[Electron] Serveur interne démarré sur le port', PORT);
+    await import('../server/server.mjs');
+    await waitForServer(`http://127.0.0.1:${PORT}`, 10000);
+    console.log('[Electron] Serveur interne prêt sur le port', PORT);
   } catch (err) {
-    console.warn('[Electron] Le serveur sera accessible en externe ou déjà lancé:', err.message);
+    // Port déjà pris par une instance externe : on réutilise ce serveur.
+    console.warn('[Electron] Serveur externe ou déjà lancé :', err.message);
   }
+}
+
+function waitForServer(url, timeoutMs) {
+  const started = Date.now();
+  return new Promise((resolve, reject) => {
+    const probe = () => {
+      const req = http.get(url, () => resolve());
+      req.on('error', () => {
+        if (Date.now() - started > timeoutMs) {
+          reject(new Error('Le serveur interne ne répond pas'));
+        } else {
+          setTimeout(probe, 300);
+        }
+      });
+    };
+    probe();
+  });
 }
 
 function createWindow() {
@@ -28,7 +47,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false
+      sandbox: true
     }
   });
 

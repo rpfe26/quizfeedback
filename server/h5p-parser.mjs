@@ -5,21 +5,24 @@ import zlib from 'node:zlib';
  */
 export function cleanHtml(str) {
   if (!str || typeof str !== 'string') return '';
+  const ENTITIES = {
+    '&nbsp;': ' ', '&eacute;': 'é', '&Eacute;': 'É', '&egrave;': 'è', '&Egrave;': 'È',
+    '&ecirc;': 'ê', '&Ecirc;': 'Ê', '&agrave;': 'à', '&Agrave;': 'À', '&ocirc;': 'ô',
+    '&Ocirc;': 'Ô', '&ucirc;': 'û', '&icirc;': 'î', '&iuml;': 'ï', '&ccedil;': 'ç',
+    '&Ccedil;': 'Ç', '&acirc;': 'â', '&ugrave;': 'ù', '&euml;': 'ë', '&iuml;': 'ï',
+    '&euro;': '€', '&deg;': '°', '&laquo;': '«', '&raquo;': '»', '&aelig;': 'æ',
+    '&oelig;': 'œ', '&amp;': '&', '&quot;': '"', '&#39;': "'", '&apos;': "'",
+    '&lt;': '<', '&gt;': '>'
+  };
   return str
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '\n')
     .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&eacute;/g, 'é')
-    .replace(/&egrave;/g, 'è')
-    .replace(/&agrave;/g, 'à')
-    .replace(/&ocirc;/g, 'ô')
-    .replace(/&ccedil;/g, 'ç')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+    .replace(/&[a-zA-Z]+;|&#\d+;/g, (m) => {
+      if (ENTITIES[m]) return ENTITIES[m];
+      const num = m.match(/^&#(\d+);$/);
+      return num ? String.fromCodePoint(Number(num[1])) : m;
+    })
     .trim();
 }
 
@@ -115,46 +118,39 @@ export function parseQuizWizardH5P(fileBufferOrJson, filename = 'quiz.h5p') {
   let content = {};
   let rawEntries = {};
 
-  if (typeof fileBufferOrJson === 'string') {
-    const str = fileBufferOrJson.trim();
-    if (str.startsWith('{') && str.endsWith('}')) {
-      try {
-        const parsed = JSON.parse(str);
-        if (parsed.questions || parsed.dialogs || parsed.cards || parsed.title) {
-          content = parsed;
-          h5pMeta = { title: parsed.title || filename.replace(/\.(h5p|json)$/i, '') };
-        }
-      } catch (e) {}
+  // 1. JSON direct (chaîne ou buffer)
+  const asJson = typeof fileBufferOrJson === 'string'
+    ? fileBufferOrJson.trim()
+    : Buffer.isBuffer(fileBufferOrJson)
+      ? fileBufferOrJson.toString('utf-8').trim()
+      : null;
+  if (asJson !== null && asJson.startsWith('{') && asJson.endsWith('}')) {
+    try {
+      const parsed = JSON.parse(asJson);
+      if (parsed && typeof parsed === 'object' && (parsed.questions || parsed.dialogs || parsed.cards || parsed.title)) {
+        content = parsed;
+        h5pMeta = { title: parsed.title || filename.replace(/\.(h5p|json)$/i, '') };
+      }
+    } catch (e) {
+      throw new Error('Le fichier JSON est invalide (syntaxe incorrecte).');
     }
   } else if (Buffer.isBuffer(fileBufferOrJson)) {
-    // Vérifier si c'est un JSON direct dans un buffer
-    const str = fileBufferOrJson.toString('utf-8').trim();
-    if (str.startsWith('{') && str.endsWith('}')) {
+    rawEntries = extractZipEntries(fileBufferOrJson);
+
+    // 1. Lire h5p.json
+    if (rawEntries['h5p.json']) {
       try {
-        const parsed = JSON.parse(str);
-        if (parsed.questions || parsed.dialogs || parsed.cards || parsed.title) {
-          content = parsed;
-          h5pMeta = { title: parsed.title || filename.replace(/\.(h5p|json)$/i, '') };
-        }
+        h5pMeta = JSON.parse(rawEntries['h5p.json'].toString('utf-8'));
       } catch (e) {}
     }
 
-    if (!content.questions && !content.dialogs && !content.cards) {
-      rawEntries = extractZipEntries(fileBufferOrJson);
-
-      // 1. Lire h5p.json
-      if (rawEntries['h5p.json']) {
-        try {
-          h5pMeta = JSON.parse(rawEntries['h5p.json'].toString('utf-8'));
-        } catch (e) {}
-      }
-
-      // 2. Lire content/content.json
-      const contentEntry = rawEntries['content/content.json'] || rawEntries['content.json'];
-      if (contentEntry) {
-        try {
-          content = JSON.parse(contentEntry.toString('utf-8'));
-        } catch (e) {}
+    // 2. Lire content/content.json
+    const contentEntry = rawEntries['content/content.json'] || rawEntries['content.json'];
+    if (contentEntry) {
+      try {
+        content = JSON.parse(contentEntry.toString('utf-8'));
+      } catch (e) {
+        throw new Error("L'archive H5P contient un content.json illisible (JSON invalide).");
       }
     }
   } else if (typeof fileBufferOrJson === 'object' && fileBufferOrJson !== null) {
@@ -243,27 +239,26 @@ export function parseQuizWizardH5P(fileBufferOrJson, filename = 'quiz.h5p') {
           id: a.id || `ans_${qIdx + 1}_${aIdx + 1}`,
           text: cleanHtml(a.text || a.answer || `Option ${aIdx + 1}`),
           correct: isCorr,
-          isCorrect: isCorr,
           feedback: cleanHtml(a.tipsAndFeedback?.chosenFeedback || a.feedback || '')
         };
       });
     } else if (params.correct !== undefined) {
-      // Vrai / Faux
+      // Vrai / Faux — H5P.TrueFalse utilise feedbackCorrect / feedbackWrong
+      const fbCorrect = cleanHtml(params.feedbackCorrect || '');
+      const fbWrong = cleanHtml(params.feedbackWrong || params.feedbackIncorrect || '');
       const isTrueCorrect = Boolean(params.correct === 'true' || params.correct === true);
       answers = [
         {
           id: `ans_${qIdx + 1}_1`,
           text: 'Vrai',
           correct: isTrueCorrect,
-          isCorrect: isTrueCorrect,
-          feedback: isTrueCorrect ? cleanHtml(params.feedbackCorrect || '') : cleanHtml(params.feedbackIncorrect || '')
+          feedback: isTrueCorrect ? fbCorrect : fbWrong
         },
         {
           id: `ans_${qIdx + 1}_2`,
           text: 'Faux',
           correct: !isTrueCorrect,
-          isCorrect: !isTrueCorrect,
-          feedback: !isTrueCorrect ? cleanHtml(params.feedbackCorrect || '') : cleanHtml(params.feedbackIncorrect || '')
+          feedback: !isTrueCorrect ? fbCorrect : fbWrong
         }
       ];
     }
@@ -275,7 +270,7 @@ export function parseQuizWizardH5P(fileBufferOrJson, filename = 'quiz.h5p') {
       answers,
       explanation: cleanHtml(params.tipsAndFeedback?.overallFeedback || params.explanation || ''),
       feedbackCorrect: cleanHtml(params.feedbackCorrect || ''),
-      feedbackIncorrect: cleanHtml(params.feedbackIncorrect || '')
+      feedbackIncorrect: cleanHtml(params.feedbackIncorrect || params.feedbackWrong || '')
     });
   });
 

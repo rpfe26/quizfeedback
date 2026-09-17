@@ -73,6 +73,22 @@ docker compose down
 
 Les données des quiz sont conservées dans le volume persistant `quizfeedback_data`.
 
+### Variables d'environnement du serveur
+
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `PORT` | `3050` (Docker : `3000`) | Port d'écoute HTTP |
+| `HOST` | `127.0.0.1` | Adresse d'écoute. Mettre `0.0.0.0` pour rendre l'app accessible depuis le réseau local (postes élèves, iPad de classe…) |
+| `DATA_DIR` | `../data` (Docker : `/app/data`) | Emplacement de la base SQLite |
+| `CORS_ORIGIN` | `*` | Origines autorisées, séparées par des virgules (ex. `http://localhost:3050,https://ent.moncollege.fr`) |
+
+En local, le serveur n'écoute que sur `127.0.0.1` (aucun accès extérieur). Pour partager sur le réseau d'établissement :
+
+```bash
+HOST=0.0.0.0 PORT=8011 node server/server.mjs
+# puis depuis n'importe quel poste du réseau : http://<ip-du-poste>:8011
+```
+
 ---
 
 ## 💻 Installation Hors Ligne sur Ordinateur (.dmg / .exe)

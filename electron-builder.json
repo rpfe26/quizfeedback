@@ -8,19 +8,28 @@
     "dist/**/*",
     "server/**/*",
     "electron/**/*",
+    "public/**/*",
     "package.json"
   ],
   "mac": {
     "category": "public.app-category.education",
-    "target": ["dmg", "zip"]
+    "target": [
+      "dmg",
+      "zip"
+    ],
+    "icon": "public/icon.png"
   },
   "win": {
     "target": [
       {
         "target": "nsis",
-        "arch": ["x64", "ia32"]
+        "arch": [
+          "x64",
+          "ia32"
+        ]
       }
-    ]
+    ],
+    "icon": "public/icon.png"
   },
   "nsis": {
     "oneClick": false,
@@ -30,7 +39,11 @@
     "shortcutName": "QuizFeedback"
   },
   "linux": {
-    "target": ["AppImage", "deb"],
-    "category": "Education"
+    "target": [
+      "AppImage",
+      "deb"
+    ],
+    "category": "Education",
+    "icon": "public/icon.png"
   }
 }

@@ -109,13 +109,24 @@ export function buildZipBuffer(entries) {
 }
 
 /**
- * Formate un texte brut en HTML pour H5P
+ * Échappe les caractères HTML pour un contenu destiné à un lecteur H5P
+ */
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/**
+ * Formate un texte brut en HTML pour H5P (texte échappé, sauf HTML explicitement voulu)
  */
 function toH5pHtml(text) {
   if (!text) return '';
   const trimmed = String(text).trim();
-  if (trimmed.startsWith('<') && trimmed.endsWith('>')) return trimmed;
-  return `<p>${trimmed.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`;
+  if (trimmed.startsWith('<p>') || trimmed.startsWith('<div>')) return trimmed;
+  return `<p>${escapeHtml(trimmed).replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`;
 }
 
 /**
@@ -124,7 +135,7 @@ function toH5pHtml(text) {
  * @returns {Buffer} Buffer du fichier .h5p
  */
 export function generateH5PQuestionSetPackage(quiz) {
-  const title = quiz.title || 'Quiz H5P';
+  const title = escapeHtml(quiz.title || 'Quiz H5P');
   const description = quiz.description || '';
   const rawQuestions = quiz.content?.questions || [];
 
@@ -150,6 +161,7 @@ export function generateH5PQuestionSetPackage(quiz) {
   }
 
   // Structure des métadonnées H5P
+  const hasTrueFalse = questionsToExport.some(q => q.type === 'truefalse');
   const h5pMeta = {
     title,
     language: 'fr',
@@ -160,6 +172,7 @@ export function generateH5PQuestionSetPackage(quiz) {
     author: 'QuizFeedback',
     preloadedDependencies: [
       { machineName: 'H5P.QuestionSet', majorVersion: 1, minorVersion: 20 },
+      ...(hasTrueFalse ? [{ machineName: 'H5P.TrueFalse', majorVersion: 1, minorVersion: 6 }] : []),
       { machineName: 'H5P.MultiChoice', majorVersion: 1, minorVersion: 16 },
       { machineName: 'H5P.Question', majorVersion: 1, minorVersion: 5 },
       { machineName: 'H5P.JoubelUI', majorVersion: 1, minorVersion: 3 },
@@ -167,24 +180,64 @@ export function generateH5PQuestionSetPackage(quiz) {
     ]
   };
 
-  // Transformation des questions en blocs H5P.MultiChoice avec rétroactions Pascal Pansu
+  // Transformation des questions en blocs H5P (MultiChoice ou TrueFalse) avec rétroactions Pascal Pansu
   const h5pQuestions = questionsToExport.map((q, qIdx) => {
+    const isTrueFalse = q.type === 'truefalse';
     const qAnswers = (q.answers || []).map((ans, aIdx) => {
-      const isCorrect = Boolean(ans.correct);
+      const isCorrect = Boolean(ans.correct ?? ans.isCorrect);
       const chosenFeedback = ans.feedback
-        ? `<div>${ans.feedback}</div>`
-        : (isCorrect && q.feedbackCorrect ? `<div>${q.feedbackCorrect}</div>` : '');
+        ? `<div>${escapeHtml(ans.feedback)}</div>`
+        : '';
+      const notChosenFeedback = isCorrect
+        ? (q.feedbackIncorrect ? `<div>${escapeHtml(q.feedbackIncorrect)}</div>` : '')
+        : (q.feedbackCorrect ? `<div>${escapeHtml(q.feedbackCorrect)}</div>` : '');
 
       return {
-        text: `<div>${ans.text || `Option ${aIdx + 1}`}</div>`,
+        text: `<div>${escapeHtml(ans.text || `Option ${aIdx + 1}`)}</div>`,
         correct: isCorrect,
         tipsAndFeedback: {
           tip: '',
           chosenFeedback,
-          notChosenFeedback: ''
+          notChosenFeedback
         }
       };
     });
+
+    if (isTrueFalse) {
+      // Vrai/Faux : H5P.TrueFalse attend un seul paramètre "correct" et des réponses fixes
+      const correctAnswerText = q.answers?.find(a => a.correct || a.isCorrect)?.text || '';
+      const correctIsTrue = correctAnswerText.toLowerCase().startsWith('v');
+      return {
+        library: 'H5P.TrueFalse 1.6',
+        params: {
+          question: toH5pHtml(q.question || `Question ${qIdx + 1}`),
+          correct: correctIsTrue ? 'true' : 'false',
+          behaviour: {
+            enableRetry: true,
+            correctScore: 1,
+            wrongScore: 0,
+            scorePoints: 1,
+            showScorePoints: true
+          },
+          checkButtonLabel: 'Vérifier',
+          submitButtonLabel: 'Vérifier',
+          tryAgainButtonLabel: 'Recommencer',
+          trueLabel: 'Vrai',
+          falseLabel: 'Faux',
+          feedbackCorrect: q.feedbackCorrect || '',
+          feedbackWrong: q.feedbackIncorrect || '',
+          l10n: {
+            trueText: 'Vrai',
+            falseText: 'Faux',
+            score: 'Score :',
+            checkAnswer: 'Vérifier',
+            showSolutionButton: 'Voir la solution',
+            tryAgain: 'Recommencer'
+          }
+        },
+        subContentId: crypto.randomUUID()
+      };
+    }
 
     return {
       library: 'H5P.MultiChoice 1.16',
@@ -209,7 +262,7 @@ export function generateH5PQuestionSetPackage(quiz) {
           tryAgainButton: 'Recommencer'
         },
         tipsAndFeedback: {
-          overallFeedback: q.explanation ? `<div>${q.explanation}</div>` : ''
+          overallFeedback: q.explanation ? `<div>${escapeHtml(q.explanation)}</div>` : ''
         }
       },
       subContentId: crypto.randomUUID()

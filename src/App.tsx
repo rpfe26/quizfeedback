@@ -129,7 +129,7 @@ export const App: React.FC = () => {
           setActiveView('prompt');
         }
       } catch (err: any) {
-        alert("Erreur lors de l'importation : " + err.message);
+        showNotification("Erreur lors de l'importation : " + err.message);
       }
     };
     reader.readAsDataURL(file);
@@ -153,7 +153,7 @@ export const App: React.FC = () => {
         }
       }
     } catch (e: any) {
-      alert("Impossible de charger le modèle : " + e.message);
+      showNotification("Impossible de charger le modèle : " + e.message);
     }
   };
 
@@ -184,8 +184,8 @@ export const App: React.FC = () => {
       
       {/* Toast Notification */}
       {notification && (
-        <div className={styles.toast}>
-          <CheckCircle2 className={styles.toastIcon} />
+        <div className={styles.toast} role="status" aria-live="polite">
+          <CheckCircle2 className={styles.toastIcon} aria-hidden="true" />
           <span>{notification}</span>
         </div>
       )}
@@ -195,28 +195,32 @@ export const App: React.FC = () => {
         <div className={styles.headerInner}>
           
           {/* Nom de l'application */}
-          <div 
+          <button
+            type="button"
             onClick={() => {
               setActiveView('list');
               setSelectedQuiz(null);
-            }} 
+            }}
             className={styles.brandTitleWrap}
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: 'pointer', background: 'none', border: 'none' }}
+            aria-label="Quiz Feedback IA : retour à la liste des quiz"
           >
             <span className={styles.brandTitle}>Quiz Feedback IA</span>
-          </div>
+          </button>
 
           {/* Commutateur Mode DYS */}
           <div className={styles.headerRight}>
-            <div 
-              className={`${styles.switchWrap} ${isDysMode ? styles.switchWrapActive : ''}`} 
-              onClick={() => setIsDysMode(prev => !prev)} 
-              style={{ cursor: 'pointer' }}
-              title={isDysMode ? "Désactiver le mode DYS" : "Activer le mode de lecture DYS"}
+            <button
+              type="button"
+              className={`${styles.switchWrap} ${isDysMode ? styles.switchWrapActive : ''}`}
+              onClick={() => setIsDysMode(prev => !prev)}
+              style={{ cursor: 'pointer', background: 'none', border: 'none', font: 'inherit' }}
+              aria-pressed={isDysMode}
+              aria-label={isDysMode ? "Désactiver le mode DYS" : "Activer le mode de lecture DYS"}
             >
-              <BookOpen style={{ width: 16, height: 16, color: isDysMode ? 'var(--color-apps-blue)' : 'var(--color-text-muted)' }} />
+              <BookOpen style={{ width: 16, height: 16, color: isDysMode ? 'var(--color-apps-blue)' : 'var(--color-text-muted)' }} aria-hidden="true" />
               <span className={styles.switchLabel}>Mode DYS</span>
-            </div>
+            </button>
           </div>
 
         </div>

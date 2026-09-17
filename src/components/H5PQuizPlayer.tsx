@@ -22,8 +22,9 @@ interface H5PQuizPlayerProps {
   onBackToList?: () => void;
 }
 
+// Source de vérité : ans.correct. isCorrect n'est lu qu'en repli (anciens imports).
 const checkIsCorrect = (ans: H5PAnswer) => {
-  return Boolean(ans.correct === true || (ans as any).correct === 'true' || (ans as any).isCorrect === true || (ans as any).isCorrect === 'true');
+  return Boolean(ans.correct ?? ans.isCorrect);
 };
 
 export const H5PQuizPlayer: React.FC<H5PQuizPlayerProps> = ({
@@ -116,8 +117,7 @@ export const H5PQuizPlayer: React.FC<H5PQuizPlayerProps> = ({
   // Écran de fin / Résultat
   if (isFinished) {
     const percentage = Math.round((score / questions.length) * 100);
-    const passThreshold = quiz.options?.passPercentage || 50;
-    const isPassed = percentage >= passThreshold;
+    const isPassed = percentage >= 50;
 
     return (
       <div className={styles.finishCard}>
@@ -202,8 +202,8 @@ export const H5PQuizPlayer: React.FC<H5PQuizPlayerProps> = ({
           </div>
         </div>
 
-        <div className={styles.headerProgress}>
-          <span>Question {currentIdx + 1} sur {questions.length}</span>
+        <div className={styles.headerProgress} role="group" aria-label="Progression du quiz">
+          <span aria-live="polite">Question {currentIdx + 1} sur {questions.length}</span>
         </div>
       </div>
 
@@ -248,6 +248,7 @@ export const H5PQuizPlayer: React.FC<H5PQuizPlayerProps> = ({
                 type="button"
                 disabled={isCurrentValidated}
                 onClick={() => handleSelectOption(ansId, isCorr)}
+                aria-pressed={isSelected}
                 className={`${styles.optionButton} ${btnStyle}`}
               >
                 <span className={`${styles.optionLetter} ${
@@ -278,7 +279,11 @@ export const H5PQuizPlayer: React.FC<H5PQuizPlayerProps> = ({
 
         {/* Rétroaction formative Pascal Pansu immédiate après sélection */}
         {isCurrentValidated && chosenAns && (
-          <div className={`${styles.feedbackBox} ${isChosenCorrect ? styles.feedbackBoxSuccess : styles.feedbackBoxRegulation}`}>
+          <div
+            role="status"
+            aria-live="polite"
+            className={`${styles.feedbackBox} ${isChosenCorrect ? styles.feedbackBoxSuccess : styles.feedbackBoxRegulation}`}
+          >
             <div className={styles.feedbackHeader}>
               {isChosenCorrect ? (
                 <>

@@ -2,6 +2,7 @@ export interface H5PAnswer {
   id: string;
   text: string;
   correct: boolean;
+  /** Ancien champ importé de Quiz Wizard : lecture seule, ne plus écrire. */
   isCorrect?: boolean;
   feedback?: string;
   tip?: string;

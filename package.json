@@ -7,11 +7,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:server": "PORT=3050 node server/server.mjs",
+    "dev:server": "cross-env PORT=3050 node server/server.mjs",
     "dev:all": "concurrently -k \"npm run dev:server\" \"npm run dev\"",
     "build": "tsc && vite build",
+    "test": "node --test tests/server/h5p.test.mjs tests/server/server.test.mjs",
     "preview": "vite preview",
-    "start": "PORT=3050 node server/server.mjs",
+    "start": "cross-env HOST=0.0.0.0 PORT=3050 node server/server.mjs",
     "electron:dev": "concurrently -k \"cross-env PORT=3050 node server/server.mjs\" \"cross-env ELECTRON_DEV=1 vite\" \"cross-env ELECTRON_DEV=1 electron .\"",
     "electron:build": "npm run build && electron-builder",
     "dist:mac": "npm run build && electron-builder --mac",
@@ -38,32 +39,5 @@
     "typescript": "^5.5.3",
     "vite": "^5.4.3"
   },
-  "build": {
-    "appId": "fr.gouv.education.quizfeedback",
-    "productName": "QuizFeedback",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "server/**/*",
-      "electron/**/*",
-      "package.json"
-    ],
-    "mac": {
-      "category": "public.app-category.education",
-      "target": [
-        "dmg"
-      ]
-    },
-    "win": {
-      "target": [
-        "nsis"
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
-  }
+  "electronBuilderConfig": "electron-builder.json"
 }

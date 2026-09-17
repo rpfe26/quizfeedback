@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { 
   Brain, 
   Copy, 
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { H5PQuiz, H5PQuestion, H5PAnswer } from '../types';
 import styles from './PansuFeedbackEngine.module.css';
+const moduleStyles = styles;
 
 interface PansuFeedbackEngineProps {
   quiz: H5PQuiz;
@@ -24,6 +25,148 @@ interface PansuFeedbackEngineProps {
   onNavigateToPlay?: () => void;
   initialTab?: 'prompt' | 'import' | 'edit';
 }
+
+
+// Bloc d'une question en accordéon, mémoïsé pour éviter de re-rendre toutes les questions à chaque frappe.
+const QuestionAccordionItem = React.memo<{
+  q: H5PQuestion;
+  qIdx: number;
+  isExpanded: boolean;
+  onToggle: (qIdx: number) => void;
+  onUpdateFeedback: (qIdx: number, aIdx: number, val: string) => void;
+  onUpdateExplanation: (qIdx: number, val: string) => void;
+}>(({ q, qIdx, isExpanded, onToggle, onUpdateFeedback, onUpdateExplanation }) => {
+  const totalAns = (q.answers || []).length;
+  const feedbackAns = (q.answers || []).filter(a => Boolean(a.feedback && a.feedback.trim())).length;
+  const isComplete = totalAns > 0 && feedbackAns === totalAns;
+  const styles = moduleStyles;
+
+  return (
+  <div
+    className={styles.accordionItem}
+  >
+    {/* Header Question */}
+    <button
+      type="button"
+      onClick={() => onToggle(qIdx)}
+      aria-expanded={isExpanded}
+      className={styles.accordionHeader}
+    >
+      <div className={styles.accordionHeaderLeft}>
+        <span className={styles.questionIndexBadge}>
+          {qIdx + 1}
+        </span>
+        <div>
+          <p className={styles.questionHeaderTitle}>
+            {q.question}
+          </p>
+          <div className={styles.questionMeta}>
+            <span style={{ color: 'var(--color-text-muted)' }}>{totalAns} propositions</span>
+            <span>•</span>
+            <span style={{ color: isComplete ? 'var(--color-success)' : 'var(--color-warning)', fontWeight: 700 }}>
+              {feedbackAns}/{totalAns} rétroactions renseignées
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+        {isComplete ? (
+          <span className={styles.badgeComplete}>
+            <Check style={{ width: 12, height: 12 }} /> Complet
+          </span>
+        ) : (
+          <span className={styles.badgeIncomplete}>
+            En cours
+          </span>
+        )}
+        {isExpanded ? <ChevronUp style={{ width: 16, height: 16, color: 'var(--color-text-light)' }} /> : <ChevronDown style={{ width: 16, height: 16, color: 'var(--color-text-light)' }} />}
+      </div>
+    </button>
+
+    {/* Contenu Déplié */}
+    {isExpanded && (
+      <div className={styles.accordionBody}>
+
+        {/* Énoncé complet */}
+        <div>
+          <span className={styles.sectionLabel}>
+            Énoncé de la question :
+          </span>
+          <p className={styles.statementText}>
+            {q.question}
+          </p>
+        </div>
+
+        {/* Réponses et feedbacks */}
+        <div className={styles.answersList}>
+          <span className={styles.sectionLabel}>
+            Propositions et Rétroactions de régulation :
+          </span>
+
+          {(q.answers || []).map((ans, aIdx) => (
+            <div 
+              key={ans.id || aIdx}
+              className={`${styles.answerCard} ${ans.correct ? styles.answerCardCorrect : ''}`}
+            >
+              <div className={styles.answerCardTop}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span className={ans.correct ? styles.answerTagCorrect : styles.answerTagWrong}>
+                    {ans.correct ? '✓ Bonne réponse' : '✗ Distracteur (mauvais choix)'}
+                  </span>
+                  <span className={styles.answerText}>{ans.text}</span>
+                </div>
+
+                {ans.feedback ? (
+                  <span className={styles.feedbackTagActive}>
+                    <Sparkles style={{ width: 12, height: 12, color: 'var(--color-primary)' }} /> Pansu actif
+                  </span>
+                ) : (
+                  <span className={styles.feedbackTagMissing}>
+                    Sans rétroaction
+                  </span>
+                )}
+              </div>
+
+              <div style={{ marginTop: '0.5rem' }}>
+                <label className={styles.feedbackLabel}>
+                  {ans.correct 
+                    ? "Rétroaction de consolidation / feed-forward :" 
+                    : "Rétroaction de régulation Pascal Pansu (étayage bienveillant sur l'erreur) :"}
+                </label>
+                <textarea
+                  value={ans.feedback || ''}
+                  onChange={e => onUpdateFeedback(qIdx, aIdx, e.target.value)}
+                  rows={2}
+                  placeholder={ans.correct 
+                    ? "Ex: Bravo ! Tu as parfaitement repéré..." 
+                    : "Ex: Attention à ne pas confondre... Prends le temps de vérifier..."}
+                  className={styles.feedbackTextarea}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Explication générale facultative */}
+        <div>
+          <label className={styles.sectionLabel}>
+            Rappel de cours général / Synthèse :
+          </label>
+          <input
+            type="text"
+            value={q.explanation || ''}
+            onChange={e => onUpdateExplanation(qIdx, e.target.value)}
+            placeholder="Optionnel : résumé notionnel de la question..."
+            className={styles.explanationInput}
+          />
+        </div>
+
+      </div>
+    )}
+  </div>
+  );
+});
 
 export const PansuFeedbackEngine: React.FC<PansuFeedbackEngineProps> = ({
   quiz,
@@ -71,6 +214,7 @@ export const PansuFeedbackEngine: React.FC<PansuFeedbackEngineProps> = ({
   const [parseError, setParseError] = useState<string | null>(null);
   const [parseSuccessMessage, setParseSuccessMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [expandedQuestionIdx, setExpandedQuestionIdx] = useState<number | null>(0);
 
   const questions = workingQuiz.content?.questions || [];
@@ -261,7 +405,7 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
   };
 
   // Mise à jour manuelle
-  const handleUpdateFeedback = (qIdx: number, aIdx: number, val: string) => {
+  const handleUpdateFeedback = useCallback((qIdx: number, aIdx: number, val: string) => {
     setWorkingQuiz(prev => {
       const clone = JSON.parse(JSON.stringify(prev));
       if (clone.content?.questions?.[qIdx]?.answers?.[aIdx]) {
@@ -269,14 +413,29 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
       }
       return clone;
     });
-  };
+  }, []);
+
+  const handleToggleQuestion = useCallback((qIdx: number) => {
+    setExpandedQuestionIdx(prev => (prev === qIdx ? null : qIdx));
+  }, []);
+
+  const handleUpdateExplanation = useCallback((qIdx: number, val: string) => {
+    setWorkingQuiz(prev => {
+      const clone = JSON.parse(JSON.stringify(prev));
+      if (clone.content?.questions?.[qIdx]) {
+        clone.content.questions[qIdx].explanation = val;
+      }
+      return clone;
+    });
+  }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
+    setSaveError(null);
     try {
       await onSave(workingQuiz);
     } catch (err: any) {
-      alert("Erreur lors de l'enregistrement : " + err.message);
+      setSaveError("Erreur lors de l'enregistrement : " + err.message);
     } finally {
       setIsSaving(false);
     }
@@ -342,16 +501,23 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className={styles.btnSave}
-            style={{ opacity: isSaving ? 0.5 : 1 }}
-          >
-            <Save style={{ width: 14, height: 14 }} />
-            <span>{isSaving ? 'Enregistrement...' : 'Enregistrer'}</span>
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem' }}>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              className={styles.btnSave}
+              style={{ opacity: isSaving ? 0.5 : 1 }}
+            >
+              <Save style={{ width: 14, height: 14 }} aria-hidden="true" />
+              <span>{isSaving ? 'Enregistrement...' : 'Enregistrer'}</span>
+            </button>
+            {saveError && (
+              <span role="alert" style={{ fontSize: '0.75rem', color: 'var(--color-error)', fontWeight: 600 }}>
+                {saveError}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -535,153 +701,28 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
               className={styles.btnSave}
               style={{ opacity: isSaving ? 0.5 : 1 }}
             >
-              <Save style={{ width: 14, height: 14 }} />
+              <Save style={{ width: 14, height: 14 }} aria-hidden="true" />
               <span>{isSaving ? 'Enregistrement...' : 'Enregistrer'}</span>
             </button>
+            {saveError && (
+              <span role="alert" style={{ fontSize: '0.75rem', color: 'var(--color-error)', fontWeight: 600 }}>
+                {saveError}
+              </span>
+            )}
           </div>
 
           <div className={styles.accordionList}>
-              {questions.map((q, qIdx) => {
-                const isExpanded = expandedQuestionIdx === qIdx;
-                const totalAns = (q.answers || []).length;
-                const feedbackAns = (q.answers || []).filter(a => Boolean(a.feedback && a.feedback.trim())).length;
-                const isComplete = totalAns > 0 && feedbackAns === totalAns;
-
-                return (
-                  <div 
-                    key={q.id || qIdx}
-                    className={styles.accordionItem}
-                  >
-                    {/* Header Question */}
-                    <button
-                      type="button"
-                      onClick={() => setExpandedQuestionIdx(isExpanded ? null : qIdx)}
-                      className={styles.accordionHeader}
-                    >
-                      <div className={styles.accordionHeaderLeft}>
-                        <span className={styles.questionIndexBadge}>
-                          {qIdx + 1}
-                        </span>
-                        <div>
-                          <p className={styles.questionHeaderTitle}>
-                            {q.question}
-                          </p>
-                          <div className={styles.questionMeta}>
-                            <span style={{ color: 'var(--color-text-muted)' }}>{totalAns} propositions</span>
-                            <span>•</span>
-                            <span style={{ color: isComplete ? 'var(--color-success)' : 'var(--color-warning)', fontWeight: 700 }}>
-                              {feedbackAns}/{totalAns} rétroactions renseignées
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
-                        {isComplete ? (
-                          <span className={styles.badgeComplete}>
-                            <Check style={{ width: 12, height: 12 }} /> Complet
-                          </span>
-                        ) : (
-                          <span className={styles.badgeIncomplete}>
-                            En cours
-                          </span>
-                        )}
-                        {isExpanded ? <ChevronUp style={{ width: 16, height: 16, color: 'var(--color-text-light)' }} /> : <ChevronDown style={{ width: 16, height: 16, color: 'var(--color-text-light)' }} />}
-                      </div>
-                    </button>
-
-                    {/* Contenu Déplié */}
-                    {isExpanded && (
-                      <div className={styles.accordionBody}>
-                        
-                        {/* Énoncé complet */}
-                        <div>
-                          <span className={styles.sectionLabel}>
-                            Énoncé de la question :
-                          </span>
-                          <p className={styles.statementText}>
-                            {q.question}
-                          </p>
-                        </div>
-
-                        {/* Réponses et feedbacks */}
-                        <div className={styles.answersList}>
-                          <span className={styles.sectionLabel}>
-                            Propositions et Rétroactions de régulation :
-                          </span>
-
-                          {(q.answers || []).map((ans, aIdx) => (
-                            <div 
-                              key={ans.id || aIdx}
-                              className={`${styles.answerCard} ${ans.correct ? styles.answerCardCorrect : ''}`}
-                            >
-                              <div className={styles.answerCardTop}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                  <span className={ans.correct ? styles.answerTagCorrect : styles.answerTagWrong}>
-                                    {ans.correct ? '✓ Bonne réponse' : '✗ Distracteur (mauvais choix)'}
-                                  </span>
-                                  <span className={styles.answerText}>{ans.text}</span>
-                                </div>
-
-                                {ans.feedback ? (
-                                  <span className={styles.feedbackTagActive}>
-                                    <Sparkles style={{ width: 12, height: 12, color: 'var(--color-primary)' }} /> Pansu actif
-                                  </span>
-                                ) : (
-                                  <span className={styles.feedbackTagMissing}>
-                                    Sans rétroaction
-                                  </span>
-                                )}
-                              </div>
-
-                              <div style={{ marginTop: '0.5rem' }}>
-                                <label className={styles.feedbackLabel}>
-                                  {ans.correct 
-                                    ? "Rétroaction de consolidation / feed-forward :" 
-                                    : "Rétroaction de régulation Pascal Pansu (étayage bienveillant sur l'erreur) :"}
-                                </label>
-                                <textarea
-                                  value={ans.feedback || ''}
-                                  onChange={e => handleUpdateFeedback(qIdx, aIdx, e.target.value)}
-                                  rows={2}
-                                  placeholder={ans.correct 
-                                    ? "Ex: Bravo ! Tu as parfaitement repéré..." 
-                                    : "Ex: Attention à ne pas confondre... Prends le temps de vérifier..."}
-                                  className={styles.feedbackTextarea}
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Explication générale facultative */}
-                        <div>
-                          <label className={styles.sectionLabel}>
-                            Rappel de cours général / Synthèse :
-                          </label>
-                          <input
-                            type="text"
-                            value={q.explanation || ''}
-                            onChange={e => {
-                              const val = e.target.value;
-                              setWorkingQuiz(prev => {
-                                const clone = JSON.parse(JSON.stringify(prev));
-                                if (clone.content?.questions?.[qIdx]) {
-                                  clone.content.questions[qIdx].explanation = val;
-                                }
-                                return clone;
-                              });
-                            }}
-                            placeholder="Optionnel : résumé notionnel de la question..."
-                            className={styles.explanationInput}
-                          />
-                        </div>
-
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {questions.map((q, qIdx) => (
+                <QuestionAccordionItem
+                  key={q.id || qIdx}
+                  q={q}
+                  qIdx={qIdx}
+                  isExpanded={expandedQuestionIdx === qIdx}
+                  onToggle={handleToggleQuestion}
+                  onUpdateFeedback={handleUpdateFeedback}
+                  onUpdateExplanation={handleUpdateExplanation}
+                />
+              ))}
             </div>
 
             {/* Pied de page action */}
