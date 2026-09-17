@@ -168,9 +168,26 @@ export const ExportView: React.FC<ExportViewProps> = ({
             </button>
 
             {downloadSuccess && (
-              <div className={styles.downloadSuccess}>
-                <CheckCircle2 style={{ width: 16, height: 16 }} />
-                <span>Fichier .H5P téléchargé avec succès dans vos Téléchargements !</span>
+              <div className={styles.downloadSuccessWrap}>
+                <div className={styles.downloadSuccess}>
+                  <CheckCircle2 style={{ width: 16, height: 16 }} />
+                  <span>Fichier .H5P téléchargé avec succès dans vos Téléchargements !</span>
+                </div>
+                <div className={styles.openDigiRow}>
+                  <a
+                    href="https://ladigitale.dev/digiquiz/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.btnOpenDigi}
+                  >
+                    <Share2 style={{ width: 15, height: 15 }} aria-hidden="true" />
+                    <span>Ouvrir DigiQuiz</span>
+                    <ExternalLink style={{ width: 13, height: 13 }} aria-hidden="true" />
+                  </a>
+                  <span className={styles.openDigiHint}>
+                    Déposez ensuite le fichier .h5p téléchargé pour obtenir un lien ou un QR code pour vos élèves.
+                  </span>
+                </div>
               </div>
             )}
 

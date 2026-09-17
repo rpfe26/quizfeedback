@@ -99,6 +99,48 @@
   color: var(--color-success);
 }
 
+.downloadSuccessWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.openDigiRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.8rem;
+}
+
+.btnOpenDigi {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.btnOpenDigi:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.btnOpenDigi:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.openDigiHint {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
 .downloadError {
   display: inline-flex;
   align-items: center;
