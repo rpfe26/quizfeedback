@@ -1,0 +1,171 @@
+.pickerBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-subtle);
+  padding: 0.6rem 0.8rem;
+}
+
+.pickerTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-apps-darkblue);
+}
+
+.agentChipPrimary,
+.agentChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-primary);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.agentChip {
+  background-color: var(--color-surface);
+  color: var(--color-primary-text);
+  border-color: var(--color-border-strong);
+}
+
+.agentChipPrimary:hover,
+.agentChip:hover {
+  background-color: var(--color-primary-hover);
+  color: #ffffff;
+}
+
+.agentChipPrimary:focus-visible,
+.agentChip:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.agentChipBadge {
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius-xs);
+  background-color: rgba(255, 255, 255, 0.25);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.agentChipGhost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-text-sub);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.agentChipGhost:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary-text);
+}
+
+.agentChipGhost:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.pickerHint {
+  width: 100%;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.prefForm {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.prefField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.prefField > span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.prefInput {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-family: inherit;
+  min-width: 12rem;
+}
+
+.prefInput:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.prefSave {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-success);
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.prefSave:hover {
+  background-color: var(--color-success-hover);
+}
+
+.prefSave:focus-visible {
+  outline: 2px solid var(--color-success);
+  outline-offset: 2px;
+}
+
+.prefCancel {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-text-sub);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.prefCancel:hover {
+  background-color: var(--color-surface-muted);
+}
+
+.prefCancel:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.prefError {
+  width: 100%;
+  font-size: 0.85rem;
+  color: var(--color-error);
+}

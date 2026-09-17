@@ -14,6 +14,7 @@ import {
   Play
 } from 'lucide-react';
 import { H5PQuiz, H5PQuestion, H5PAnswer } from '../types';
+import { AiAgentPicker } from './AiAgentPicker';
 import styles from './PansuFeedbackEngine.module.css';
 const moduleStyles = styles;
 
@@ -578,6 +579,8 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
                 <span>Masquer cette zone</span>
               </button>
             </div>
+
+            <AiAgentPicker />
 
             {/* Grille : 1. Prompt IA & 2. Réponse IA */}
             <div className={styles.promptAndResponseGrid}>
