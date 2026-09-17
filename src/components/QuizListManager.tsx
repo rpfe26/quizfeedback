@@ -220,11 +220,12 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
                     <button
                       type="button"
                       onClick={() => onExportQuiz(quiz)}
-                      className={styles.btnActionIcon}
-                      aria-label={`Exporter le quiz ${quiz.title}`}
+                      className={`${styles.btnActionSecondary} ${styles.btnActionExport}`}
+                      aria-label={`Étape 4 : exporter et diffuser le quiz ${quiz.title}`}
                       title="Étape 4 : Exporter et diffuser"
                     >
                       <Download style={{ width: 14, height: 14 }} aria-hidden="true" />
+                      <span>Étape 4 : Publier</span>
                     </button>
 
                     <button

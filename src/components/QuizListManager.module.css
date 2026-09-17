@@ -304,6 +304,27 @@
   font-size: 0.9rem;
 }
 
+.btnActionSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-primary-text);
+  font-size: 0.9rem;
+}
+
+.btnActionSecondary:hover {
+  background-color: var(--color-primary-light);
+}
+
+.btnActionSecondary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .btnActionIcon {
   display: inline-flex;
   align-items: center;
