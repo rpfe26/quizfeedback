@@ -104,12 +104,16 @@ function setupMenu() {
           click: () => shell.openExternal('https://app.getquizwizard.com/create-content/source')
         },
         {
-          label: 'Télécharger LogiQuiz (La Digitale)',
-          click: () => shell.openExternal('https://ladigitale.dev/logiquiz/')
+          label: 'Assistant Numérique de l\'État (IA souveraine)',
+          click: () => shell.openExternal('https://assistant.numerique.gouv.fr/')
         },
         {
-          label: 'Publier sur Digiquiz (La Digitale)',
-          click: () => shell.openExternal('https://digiquiz.ladigitale.dev/')
+          label: 'Diffuser sur DigiQuiz (La Digitale)',
+          click: () => shell.openExternal('https://ladigitale.dev/digiquiz/')
+        },
+        {
+          label: 'Télécharger LogiQuiz (La Digitale)',
+          click: () => shell.openExternal('https://ladigitale.dev/logiquiz/')
         }
       ]
     }

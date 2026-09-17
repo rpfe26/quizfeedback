@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Brain, 
   Copy, 
@@ -8,32 +8,64 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Save, 
-  RefreshCw, 
-  Lightbulb, 
-  BookOpen, 
-  ExternalLink,
   ChevronDown,
   ChevronUp,
   ArrowRight,
-  Info
+  Play
 } from 'lucide-react';
 import { H5PQuiz, H5PQuestion, H5PAnswer } from '../types';
+import styles from './PansuFeedbackEngine.module.css';
 
 interface PansuFeedbackEngineProps {
   quiz: H5PQuiz;
   onSave: (updatedQuiz: H5PQuiz) => Promise<void> | void;
   onClose?: () => void;
   onNavigateToExport?: () => void;
+  onNavigateToPlay?: () => void;
+  initialTab?: 'prompt' | 'import' | 'edit';
 }
 
 export const PansuFeedbackEngine: React.FC<PansuFeedbackEngineProps> = ({
   quiz,
   onSave,
   onClose,
-  onNavigateToExport
+  onNavigateToExport,
+  onNavigateToPlay,
+  initialTab
 }) => {
-  const [activeTab, setActiveTab] = useState<'prompt' | 'import' | 'edit'>('prompt');
+  useEffect(() => {
+    if (initialTab === 'edit') {
+      const el = document.getElementById('questions-review-section');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [initialTab]);
+
+  const hasExistingFeedbacks = useMemo(() => {
+    return (quiz.content?.questions || []).some(q =>
+      (q.answers || []).some(a => a.feedback && a.feedback.trim().length > 0)
+    );
+  }, [quiz]);
+
+  const [isAiSectionOpen, setIsAiSectionOpen] = useState(() => {
+    if (initialTab === 'prompt') return true;
+    if (initialTab === 'edit') return false;
+    return !hasExistingFeedbacks;
+  });
+
   const [workingQuiz, setWorkingQuiz] = useState<H5PQuiz>(() => JSON.parse(JSON.stringify(quiz)));
+
+  useEffect(() => {
+    setWorkingQuiz(JSON.parse(JSON.stringify(quiz)));
+    const hasFb = (quiz.content?.questions || []).some(q =>
+      (q.answers || []).some(a => a.feedback && a.feedback.trim().length > 0)
+    );
+    if (initialTab === 'prompt') {
+      setIsAiSectionOpen(true);
+    } else if (hasFb) {
+      setIsAiSectionOpen(false);
+    }
+  }, [quiz.id, initialTab]);
+
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [aiResponseText, setAiResponseText] = useState('');
   const [parseError, setParseError] = useState<string | null>(null);
@@ -214,8 +246,15 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
       });
 
       setWorkingQuiz(updatedQuiz);
+      onSave(updatedQuiz);
       setParseSuccessMessage(`${totalFeedbacksAdded} rétroaction(s) de régulation Pascal Pansu ont été intégrées avec succès !`);
-      setActiveTab('edit');
+      setParseError(null);
+      setAiResponseText('');
+      setIsAiSectionOpen(false);
+      setTimeout(() => {
+        const el = document.getElementById('questions-review-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     } catch (err: any) {
       setParseError(`Erreur d'analyse du JSON : ${err.message}. Assurez-vous d'avoir copié l'intégralité du bloc de code JSON fourni par l'IA.`);
     }
@@ -266,265 +305,242 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
   }, [questions]);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+    <div className={styles.engineCard}>
       
-      {/* Header */}
-      <div className="p-5 sm:p-6 bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center shrink-0">
-            <Brain className="w-6 h-6 text-purple-300" />
+      {/* Header Calm & Accessible */}
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <div className={styles.headerIconWrap}>
+            <Brain style={{ width: 24, height: 24, color: '#60a5fa' }} />
           </div>
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-lg sm:text-xl font-black tracking-tight text-white">
+            <div className={styles.headerTitleRow}>
+              <h2 className={styles.headerTitle}>
                 Moteur de Rétroactions Formatives
               </h2>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-purple-500/30 text-purple-200 border border-purple-400/30">
+              <span className={styles.headerTag}>
                 Logique Pascal Pansu
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-purple-200/80 mt-1 max-w-2xl leading-relaxed">
+            <p className={styles.headerDesc}>
               Transformez les erreurs en leviers d'apprentissage grâce à l'étayage bienveillant et l'attribution causale contrôlable.
             </p>
           </div>
         </div>
 
-        {/* Jauge de complétion */}
-        <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-xl border border-white/10 shrink-0 self-start sm:self-center">
-          <div className="text-right">
-            <div className="text-xs font-bold text-white">Couverture Rétroactions</div>
-            <div className="text-[11px] text-purple-200">
-              {stats.configuredOptions} / {stats.totalOptions} options ({stats.percent}%)
+        {/* Jauge de complétion et Enregistrement */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div className={styles.statsGauge}>
+            <div className={styles.statsText}>
+              <div className={styles.statsLabel}>Couverture Rétroactions</div>
+              <div className={styles.statsDetail}>
+                {stats.configuredOptions} / {stats.totalOptions} options ({stats.percent}%)
+              </div>
+            </div>
+            <div className={styles.statsCircle}>
+              {stats.percent}%
             </div>
           </div>
-          <div className="w-10 h-10 rounded-full border-3 border-purple-400 flex items-center justify-center text-xs font-black text-white">
-            {stats.percent}%
-          </div>
-        </div>
-      </div>
 
-      {/* Navigation des Onglets */}
-      <div className="bg-slate-50 border-b border-slate-200 px-5 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('prompt')}
-            className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'prompt'
-                ? 'bg-purple-700 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>1. Générer le Prompt IA</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('import')}
-            className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'import'
-                ? 'bg-purple-700 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>2. Coller la Réponse IA</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('edit')}
-            className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-2 transition-all cursor-pointer ${
-              activeTab === 'edit'
-                ? 'bg-purple-700 text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>3. Ajuster &amp; Valider ({stats.configuredOptions}/{stats.totalOptions})</span>
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-50"
+            className={styles.btnSave}
+            style={{ opacity: isSaving ? 0.5 : 1 }}
           >
-            <Save className="w-3.5 h-3.5" />
+            <Save style={{ width: 14, height: 14 }} />
             <span>{isSaving ? 'Enregistrement...' : 'Enregistrer'}</span>
           </button>
-
-          {onNavigateToExport && (
-            <button
-              type="button"
-              onClick={onNavigateToExport}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-            >
-              <span>Exporter LogiQuiz</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Contenu de l'Onglet */}
-      <div className="p-5 sm:p-6 flex-1">
+      {/* Corps du Moteur */}
+      <div className={styles.engineBody}>
         
-        {/* TAB 1 : GENERER LE PROMPT */}
-        {activeTab === 'prompt' && (
-          <div className="space-y-4">
-            <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-4 text-xs text-purple-900 flex items-start gap-3">
-              <Info className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+        {/* Étapes 2 & 3 : Zone Génération & Injection IA (repliable) */}
+        {!isAiSectionOpen ? (
+          <div className={styles.aiSectionCollapsedBar}>
+            <div className={styles.collapsedBarLeft}>
+              <div className={styles.collapsedBadge}>
+                {stats.configuredOptions > 0 ? (
+                  <CheckCircle2 style={{ width: 16, height: 16, color: 'var(--color-success)' }} />
+                ) : (
+                  <Sparkles style={{ width: 16, height: 16, color: '#f59e0b' }} />
+                )}
+              </div>
               <div>
-                <strong className="font-bold">Comment ça marche ?</strong>
-                <p className="mt-0.5 text-purple-800 leading-relaxed">
-                  1. Cliquez sur <strong>Copier le prompt</strong> ci-dessous.<br />
-                  2. Ouvrez votre IA préférée (ChatGPT, Claude, Gemini, Mistral).<br />
-                  3. Collez le prompt et appuyez sur Entrée. L'IA rédigera les rétroactions formatives pour chaque distracteur.<br />
-                  4. Revenez ici à l'onglet <strong>2. Coller la Réponse IA</strong>.
-                </p>
+                <div className={styles.collapsedTitle}>
+                  {stats.configuredOptions > 0 
+                    ? `Rétroactions IA intégrées (${stats.configuredOptions}/${stats.totalOptions} options configurées)` 
+                    : 'Étapes 2 & 3 : Prompt et Réponse IA'}
+                </div>
+                <div className={styles.collapsedSub}>
+                  {stats.configuredOptions > 0 
+                    ? 'La réponse IA a été intégrée. La zone de saisie est masquée pour faciliter la vérification ci-dessous.' 
+                    : 'Copiez le prompt et collez la réponse fournie par votre IA.'}
+                </div>
               </div>
             </div>
 
-            {/* Accès rapide aux IA */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-slate-500">Ouvrir votre IA :</span>
-              <a
-                href="https://chatgpt.com"
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1"
+            <button
+              type="button"
+              onClick={() => setIsAiSectionOpen(true)}
+              className={styles.btnToggleAiSection}
+              title="Ouvrir le prompt et la zone de saisie IA"
+            >
+              <ChevronDown style={{ width: 15, height: 15 }} />
+              <span>Afficher le Prompt &amp; la zone IA</span>
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className={styles.aiSectionOpenHeader}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Sparkles style={{ width: 15, height: 15, color: '#f59e0b' }} />
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-apps-darkblue)' }}>
+                  Étapes 2 &amp; 3 : Copier le prompt et coller la réponse IA
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAiSectionOpen(false)}
+                className={styles.btnToggleAiSection}
+                title="Masquer le prompt et la zone de réponse IA"
               >
-                ChatGPT <ExternalLink className="w-3 h-3 text-slate-400" />
-              </a>
-              <a
-                href="https://claude.ai"
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1"
-              >
-                Claude <ExternalLink className="w-3 h-3 text-slate-400" />
-              </a>
-              <a
-                href="https://gemini.google.com"
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1"
-              >
-                Gemini <ExternalLink className="w-3 h-3 text-slate-400" />
-              </a>
-              <a
-                href="https://chat.mistral.ai"
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1"
-              >
-                Mistral Le Chat <ExternalLink className="w-3 h-3 text-slate-400" />
-              </a>
+                <ChevronUp style={{ width: 15, height: 15 }} />
+                <span>Masquer cette zone</span>
+              </button>
             </div>
 
-            {/* Zone Prompt */}
-            <div className="relative">
-              <div className="flex items-center justify-between bg-slate-800 text-slate-200 px-4 py-2.5 rounded-t-xl text-xs font-mono">
-                <span>prompt_pansu_evaluation_formative.md</span>
-                <button
-                  type="button"
-                  onClick={handleCopyPrompt}
-                  className="px-3 py-1 rounded-md bg-purple-600 hover:bg-purple-500 text-white font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  {copiedPrompt ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Copié dans le presse-papier !</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copier tout le Prompt</span>
-                    </>
-                  )}
-                </button>
+            {/* Grille : 1. Prompt IA & 2. Réponse IA */}
+            <div className={styles.promptAndResponseGrid}>
+              
+              {/* Bloc 1 : Copier le Prompt (Gauche) */}
+              <div className={styles.promptCard}>
+                <div className={styles.sectionCardHeader}>
+                  <div className={styles.sectionCardTitle}>
+                    <Sparkles style={{ width: 15, height: 15, color: '#f59e0b' }} />
+                    <span>1. Prompt IA (à copier)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyPrompt}
+                    className={styles.btnCopyPrompt}
+                  >
+                    {copiedPrompt ? (
+                      <>
+                        <Check style={{ width: 14, height: 14 }} />
+                        <span>Copié dans le presse-papier !</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy style={{ width: 14, height: 14 }} />
+                        <span>Copier tout le Prompt</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <textarea
+                  readOnly
+                  value={generatedPromptText}
+                  className={styles.promptTextarea}
+                />
               </div>
 
-              <textarea
-                readOnly
-                value={generatedPromptText}
-                rows={14}
-                className="w-full p-4 font-mono text-xs bg-slate-900 text-slate-100 rounded-b-xl focus:outline-none leading-relaxed select-all"
-              />
+              {/* Bloc 2 : Coller la Réponse IA (Droite) */}
+              <div className={styles.responseCard}>
+                <div className={styles.sectionCardHeader}>
+                  <div className={styles.sectionCardTitle}>
+                    <FileText style={{ width: 15, height: 15, color: 'var(--color-primary)' }} />
+                    <span>2. Réponse de l'IA (à coller)</span>
+                  </div>
+                  <div className={styles.responseCardActions}>
+                    {aiResponseText && (
+                      <button
+                        type="button"
+                        onClick={() => setAiResponseText('')}
+                        className={styles.btnClear}
+                      >
+                        Effacer
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleProcessAiResponse}
+                      className={styles.btnInject}
+                    >
+                      <Sparkles style={{ width: 14, height: 14, color: '#fde047' }} />
+                      <span>Analyser et Injecter</span>
+                    </button>
+                  </div>
+                </div>
+
+                {parseError && (
+                  <div className={styles.alertError}>
+                    <AlertCircle style={{ width: 16, height: 16, color: 'var(--color-error)', flexShrink: 0, marginTop: 2 }} />
+                    <span>{parseError}</span>
+                  </div>
+                )}
+
+                <textarea
+                  value={aiResponseText}
+                  onChange={e => setAiResponseText(e.target.value)}
+                  placeholder="Collez ici la réponse complète fournie par votre IA..."
+                  className={styles.responseInput}
+                />
+              </div>
             </div>
           </div>
         )}
 
-        {/* TAB 2 : COLLER LA REPONSE IA */}
-        {activeTab === 'import' && (
-          <div className="space-y-4">
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-700">
-              <strong className="font-bold text-slate-900">Collez ci-dessous le texte ou le bloc JSON retourné par l'IA :</strong>
-              <p className="mt-1 text-slate-500 leading-relaxed">
-                Le parseur intelligent extrait automatiquement le bloc <code>```json ... ```</code> même s'il y a du texte avant ou après.
-              </p>
+        {parseSuccessMessage && (
+          <div className={styles.alertSuccessBanner}>
+            <CheckCircle2 style={{ width: 18, height: 18, color: 'var(--color-success)', flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 700, display: 'block' }}>
+                {parseSuccessMessage}
+              </span>
+              <span style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                La réponse IA a été intégrée. La zone de saisie a été masquée pour vous permettre de vérifier directement les propositions ci-dessous.
+              </span>
             </div>
-
-            {parseError && (
-              <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                <span>{parseError}</span>
-              </div>
-            )}
-
-            {parseSuccessMessage && (
-              <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>{parseSuccessMessage}</span>
-              </div>
-            )}
-
-            <textarea
-              value={aiResponseText}
-              onChange={e => setAiResponseText(e.target.value)}
-              placeholder="Collez ici la réponse complète fournie par ChatGPT, Claude, Gemini ou Mistral..."
-              rows={12}
-              className="w-full p-4 font-mono text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
-            />
-
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setAiResponseText('')}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
-              >
-                Effacer
-              </button>
-              <button
-                type="button"
-                onClick={handleProcessAiResponse}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-purple-700 hover:bg-purple-800 text-white shadow-md flex items-center gap-2 cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4" />
-                <span>Analyser et Injecter les Rétroactions</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setParseSuccessMessage(null)}
+              className={styles.btnCloseAlert}
+            >
+              ×
+            </button>
           </div>
         )}
 
-        {/* TAB 3 : AJUSTER & REVOIR */}
-        {activeTab === 'edit' && (
-          <div className="space-y-4">
-            
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+        {/* Section 3 : Contrôle et Personnalisation Question par Question */}
+        <div id="questions-review-section" className={styles.editSection}>
+          <div className={styles.editHeader}>
+            <div>
+              <h3 className={styles.editTitle}>
                 Vérification et Personnalisation Question par Question ({questions.length} questions)
               </h3>
-              <div className="text-xs text-slate-500">
-                Cliquez sur une question pour déplier ses propositions.
+              <div className={styles.editSub}>
+                Cliquez sur une question pour déplier ses propositions et personnaliser les feedbacks.
               </div>
             </div>
 
-            <div className="space-y-3">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              className={styles.btnSave}
+              style={{ opacity: isSaving ? 0.5 : 1 }}
+            >
+              <Save style={{ width: 14, height: 14 }} />
+              <span>{isSaving ? 'Enregistrement...' : 'Enregistrer'}</span>
+            </button>
+          </div>
+
+          <div className={styles.accordionList}>
               {questions.map((q, qIdx) => {
                 const isExpanded = expandedQuestionIdx === qIdx;
                 const totalAns = (q.answers || []).length;
@@ -534,100 +550,92 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
                 return (
                   <div 
                     key={q.id || qIdx}
-                    className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs transition-all"
+                    className={styles.accordionItem}
                   >
                     {/* Header Question */}
                     <button
                       type="button"
                       onClick={() => setExpandedQuestionIdx(isExpanded ? null : qIdx)}
-                      className="w-full p-3.5 sm:p-4 text-left flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+                      className={styles.accordionHeader}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 text-xs font-black flex items-center justify-center shrink-0">
+                      <div className={styles.accordionHeaderLeft}>
+                        <span className={styles.questionIndexBadge}>
                           {qIdx + 1}
                         </span>
                         <div>
-                          <p className="text-xs font-bold text-slate-900 line-clamp-1">
+                          <p className={styles.questionHeaderTitle}>
                             {q.question}
                           </p>
-                          <div className="flex items-center gap-2 mt-0.5 text-[11px]">
-                            <span className="text-slate-500">{totalAns} propositions</span>
+                          <div className={styles.questionMeta}>
+                            <span style={{ color: 'var(--color-text-muted)' }}>{totalAns} propositions</span>
                             <span>•</span>
-                            <span className={isComplete ? 'text-emerald-600 font-semibold' : 'text-amber-600 font-semibold'}>
+                            <span style={{ color: isComplete ? 'var(--color-success)' : 'var(--color-warning)', fontWeight: 700 }}>
                               {feedbackAns}/{totalAns} rétroactions renseignées
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
                         {isComplete ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                            <Check className="w-3 h-3" /> Complet
+                          <span className={styles.badgeComplete}>
+                            <Check style={{ width: 12, height: 12 }} /> Complet
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                          <span className={styles.badgeIncomplete}>
                             En cours
                           </span>
                         )}
-                        {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                        {isExpanded ? <ChevronUp style={{ width: 16, height: 16, color: 'var(--color-text-light)' }} /> : <ChevronDown style={{ width: 16, height: 16, color: 'var(--color-text-light)' }} />}
                       </div>
                     </button>
 
                     {/* Contenu Déplié */}
                     {isExpanded && (
-                      <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/50 space-y-4 text-xs">
+                      <div className={styles.accordionBody}>
                         
                         {/* Énoncé complet */}
                         <div>
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                          <span className={styles.sectionLabel}>
                             Énoncé de la question :
                           </span>
-                          <p className="p-2.5 rounded-lg bg-white border border-slate-200 text-slate-800 font-medium">
+                          <p className={styles.statementText}>
                             {q.question}
                           </p>
                         </div>
 
                         {/* Réponses et feedbacks */}
-                        <div className="space-y-3">
-                          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                        <div className={styles.answersList}>
+                          <span className={styles.sectionLabel}>
                             Propositions et Rétroactions de régulation :
                           </span>
 
                           {(q.answers || []).map((ans, aIdx) => (
                             <div 
                               key={ans.id || aIdx}
-                              className={`p-3.5 rounded-xl border transition-all ${
-                                ans.correct 
-                                  ? 'bg-emerald-50/40 border-emerald-200' 
-                                  : 'bg-white border-slate-200'
-                              }`}
+                              className={`${styles.answerCard} ${ans.correct ? styles.answerCardCorrect : ''}`}
                             >
-                              <div className="flex items-center justify-between mb-1.5">
-                                <div className="flex items-center gap-2">
-                                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                                    ans.correct 
-                                      ? 'bg-emerald-100 text-emerald-800' 
-                                      : 'bg-slate-100 text-slate-700'
-                                  }`}>
+                              <div className={styles.answerCardTop}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <span className={ans.correct ? styles.answerTagCorrect : styles.answerTagWrong}>
                                     {ans.correct ? '✓ Bonne réponse' : '✗ Distracteur (mauvais choix)'}
                                   </span>
-                                  <span className="font-bold text-slate-800">{ans.text}</span>
+                                  <span className={styles.answerText}>{ans.text}</span>
                                 </div>
 
                                 {ans.feedback ? (
-                                  <span className="text-[10px] font-bold text-purple-700 flex items-center gap-1">
-                                    <Sparkles className="w-3 h-3 text-purple-500" /> Pansu actif
+                                  <span className={styles.feedbackTagActive}>
+                                    <Sparkles style={{ width: 12, height: 12, color: 'var(--color-primary)' }} /> Pansu actif
                                   </span>
                                 ) : (
-                                  <span className="text-[10px] font-semibold text-amber-600">
+                                  <span className={styles.feedbackTagMissing}>
                                     Sans rétroaction
                                   </span>
                                 )}
                               </div>
 
-                              <div className="mt-2">
-                                <label className="block text-[11px] text-slate-500 mb-1">
+                              <div style={{ marginTop: '0.5rem' }}>
+                                <label className={styles.feedbackLabel}>
                                   {ans.correct 
                                     ? "Rétroaction de consolidation / feed-forward :" 
                                     : "Rétroaction de régulation Pascal Pansu (étayage bienveillant sur l'erreur) :"}
@@ -639,7 +647,7 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
                                   placeholder={ans.correct 
                                     ? "Ex: Bravo ! Tu as parfaitement repéré..." 
                                     : "Ex: Attention à ne pas confondre... Prends le temps de vérifier..."}
-                                  className="w-full p-2.5 rounded-lg border border-slate-300 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                                  className={styles.feedbackTextarea}
                                 />
                               </div>
                             </div>
@@ -648,7 +656,7 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
 
                         {/* Explication générale facultative */}
                         <div>
-                          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          <label className={styles.sectionLabel}>
                             Rappel de cours général / Synthèse :
                           </label>
                           <input
@@ -665,7 +673,7 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
                               });
                             }}
                             placeholder="Optionnel : résumé notionnel de la question..."
-                            className="w-full p-2 rounded-lg border border-slate-300 bg-white text-xs"
+                            className={styles.explanationInput}
                           />
                         </div>
 
@@ -677,34 +685,54 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
             </div>
 
             {/* Pied de page action */}
-            <div className="pt-4 border-t border-slate-200 flex items-center justify-between">
+            <div className={styles.tabFooterRow}>
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                className={styles.btnSave}
+                style={{ opacity: isSaving ? 0.5 : 1 }}
               >
-                <Save className="w-4 h-4" />
+                <Save style={{ width: 16, height: 16 }} />
                 <span>{isSaving ? 'Enregistrement...' : 'Enregistrer toutes les Rétroactions'}</span>
               </button>
 
-              {onNavigateToExport && (
-                <button
-                  type="button"
-                  onClick={onNavigateToExport}
-                  className="px-5 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-2 shadow-md cursor-pointer"
-                >
-                  <span>Passer à l'Export LogiQuiz (.h5p)</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {onNavigateToPlay && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await onSave(workingQuiz);
+                      } catch (e) {}
+                      onNavigateToPlay();
+                    }}
+                    className={styles.btnPlay}
+                  >
+                    <Play style={{ width: 16, height: 16, fill: 'currentColor' }} />
+                    <span>Tester la Simulation</span>
+                  </button>
+                )}
+
+                {onNavigateToExport && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await onSave(workingQuiz);
+                      } catch (e) {}
+                      onNavigateToExport();
+                    }}
+                    className={styles.btnNextExport}
+                  >
+                    <span>Valider et passer à l'Étape 4 : Publier</span>
+                    <ArrowRight style={{ width: 16, height: 16 }} />
+                  </button>
+                )}
+              </div>
             </div>
-
           </div>
-        )}
-
+        </div>
       </div>
-
-    </div>
   );
 };

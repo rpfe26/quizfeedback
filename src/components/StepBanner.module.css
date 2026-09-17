@@ -1,0 +1,173 @@
+/* ==========================================================================
+   StepBanner - 5-Step Pedagogical Workflow Banner
+   Pure CSS Modules without Tailwind CSS
+   ========================================================================== */
+
+.bannerContainer {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.15rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.bannerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.bannerTitleWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bannerTitle {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--color-apps-darkblue);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.bannerSubtitle {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.vignettesGrid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .vignettesGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .vignettesGrid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+.vignetteCard {
+  background-color: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  position: relative;
+}
+
+.vignetteCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 36, 107, 0.07);
+  border-color: var(--color-apps-blue);
+}
+
+.vignetteTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.55rem;
+}
+
+.stepBadge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--color-apps-darkblue);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.vignetteIcon {
+  color: var(--color-apps-darkblue);
+  opacity: 0.75;
+}
+
+.vignetteBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.vignetteTitle {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.vignetteDesc {
+  font-size: 0.74rem;
+  color: var(--color-text-sub);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.vignetteFooter {
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--color-border);
+  display: flex;
+  align-items: center;
+}
+
+.vignetteLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--color-apps-blue);
+  text-decoration: none;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  padding: 0.28rem 0.5rem;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  width: 100%;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.vignetteLink:hover {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-apps-blue);
+  color: var(--color-apps-darkblue);
+}
+
+.vignetteTag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  width: 100%;
+  padding: 0.2rem 0;
+}

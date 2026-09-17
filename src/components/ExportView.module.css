@@ -1,0 +1,262 @@
+/* ==========================================================================
+   ExportView.module.css - Écran épuré Étape 4 (style Apps Éducation)
+   ========================================================================== */
+
+.container {
+  max-width: 60rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btnBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text-sub);
+  transition: color var(--transition-fast);
+  cursor: pointer;
+}
+
+.btnBack:hover {
+  color: var(--color-apps-blue);
+}
+
+.card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-2xs);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* En-tête de la carte */
+.header {
+  padding: 1.25rem 1.5rem;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.headerIconWrap {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--radius-md);
+  background-color: var(--color-success-light);
+  border: 1px solid var(--color-success-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-success);
+}
+
+.headerTitle {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-apps-darkblue);
+  line-height: 1.2;
+}
+
+.headerDesc {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+  margin-top: 0.2rem;
+}
+
+.headerMeta {
+  background-color: var(--color-surface-subtle);
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Bloc central de téléchargement */
+.downloadHero {
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.downloadHeroTitle {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-apps-darkblue);
+  margin: 0;
+}
+
+.downloadHeroDesc {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  max-width: 32rem;
+  margin: 0 auto;
+  line-height: var(--line-height-base);
+}
+
+.btnDownloadH5P {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.85rem 2rem;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-success);
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.btnDownloadH5P:hover {
+  background-color: var(--color-success-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.downloadSuccess {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-success);
+  font-weight: 700;
+  font-size: 0.8rem;
+  animation: fadeIn 0.18s ease-out forwards;
+}
+
+/* Grille de diffusion style "Mes applications" */
+.diffusionSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.diffusionTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-apps-darkblue);
+  margin: 0;
+}
+
+.diffusionGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.diffusionCard {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: var(--shadow-2xs);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.diffusionCard:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.diffusionHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.diffusionIconWrap {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.diffusionCardTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--color-apps-darkblue);
+}
+
+.diffusionCardSub {
+  font-size: 0.72rem;
+  color: var(--color-success);
+  font-weight: 700;
+}
+
+.diffusionText {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+  line-height: var(--line-height-base);
+}
+
+.btnDiffusionLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-subtle);
+  color: var(--color-apps-blue);
+  border: 1px solid var(--color-border);
+  font-size: 0.78rem;
+  font-weight: 700;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.btnDiffusionLink:hover {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary-border);
+}

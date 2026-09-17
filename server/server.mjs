@@ -67,6 +67,24 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
+  // 1b. Téléchargement direct du livrable autonome en 1 seul fichier HTML
+  if (pathname === '/download-standalone' || pathname === '/api/download-standalone') {
+    const standalonePaths = [
+      path.resolve(__dirname, '../quizfeedback-standalone.html'),
+      path.resolve(__dirname, '../dist/quizfeedback-standalone.html'),
+      path.resolve(__dirname, '../public/quizfeedback-standalone.html')
+    ];
+    for (const p of standalonePaths) {
+      if (fs.existsSync(p)) {
+        res.writeHead(200, {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Content-Disposition': 'attachment; filename="quizfeedback-standalone.html"'
+        });
+        return res.end(fs.readFileSync(p));
+      }
+    }
+  }
+
   // 2. API Routes
   if (pathname.startsWith('/api/h5p')) {
     const chunks = [];
@@ -128,7 +146,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // GET /api/h5p/quiz/:id : Détail complet
-    if (pathname.startsWith('/api/h5p/quiz/') && req.method === 'GET' && !pathname.endsWith('/export')) {
+    if (pathname.startsWith('/api/h5p/quiz/') && (req.method === 'GET' || req.method === 'HEAD') && !pathname.includes('/export')) {
       const quizId = pathname.replace('/api/h5p/quiz/', '').trim();
       const row = db.prepare('SELECT * FROM h5p_quizzes WHERE id = ?').get(quizId);
       if (!row) return sendError(res, 'Quiz introuvable', 404);
@@ -255,7 +273,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // GET /api/h5p/quiz/:id/export : Exportation de l'archive .h5p pour LogiQuiz / Digiquiz
-    if (pathname.startsWith('/api/h5p/quiz/') && pathname.endsWith('/export') && req.method === 'GET') {
+    if (pathname.startsWith('/api/h5p/quiz/') && pathname.endsWith('/export') && (req.method === 'GET' || req.method === 'HEAD')) {
       const quizId = pathname.replace('/api/h5p/quiz/', '').replace(/\/export$/, '').trim();
       const row = db.prepare('SELECT * FROM h5p_quizzes WHERE id = ?').get(quizId);
       if (!row) return sendError(res, 'Quiz introuvable', 404);
@@ -285,6 +303,7 @@ const server = http.createServer(async (req, res) => {
           'Content-Length': h5pZipBuffer.length,
           'Access-Control-Allow-Origin': '*'
         });
+        if (req.method === 'HEAD') return res.end();
         return res.end(h5pZipBuffer);
       } catch (err) {
         console.error('Erreur génération H5P:', err);

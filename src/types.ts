@@ -59,4 +59,4 @@ export interface H5PQuiz {
   feedbacks_configured?: number;
 }
 
-export type AppView = 'list' | 'edit' | 'feedback' | 'play' | 'wizard_guide';
+export type AppView = 'list' | 'prompt' | 'control' | 'export' | 'feedback' | 'play';

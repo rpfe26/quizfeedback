@@ -1,38 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Sparkles, 
-  Brain, 
-  Download, 
-  ExternalLink, 
-  Laptop, 
-  Layers, 
-  BookOpen, 
+  CheckCircle2, 
   ArrowLeft,
-  Info,
-  CheckCircle2,
-  Share2
+  Download,
+  BookOpen
 } from 'lucide-react';
 import { H5PQuiz, AppView } from './types';
-import { QuizWizardHelper } from './components/QuizWizardHelper';
+import { StepBanner } from './components/StepBanner';
 import { QuizListManager } from './components/QuizListManager';
 import { PansuFeedbackEngine } from './components/PansuFeedbackEngine';
 import { H5PQuizPlayer } from './components/H5PQuizPlayer';
-import { LogiQuizExportModal } from './components/LogiQuizExportModal';
+import { ExportView } from './components/ExportView';
+import styles from './App.module.css';
 
 export const App: React.FC = () => {
   const [quizzes, setQuizzes] = useState<H5PQuiz[]>([]);
   const [activeView, setActiveView] = useState<AppView>('list');
   const [selectedQuiz, setSelectedQuiz] = useState<H5PQuiz | null>(null);
-  const [exportModalQuiz, setExportModalQuiz] = useState<H5PQuiz | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [notification, setNotification] = useState<string | null>(null);
+  const [isDysMode, setIsDysMode] = useState<boolean>(() => {
+    return localStorage.getItem('quizfeedback_dys_mode') === 'true';
+  });
+
+  // Synchronisation du mode DYS
+  useEffect(() => {
+    if (isDysMode) {
+      document.body.classList.add('dys-mode');
+    } else {
+      document.body.classList.remove('dys-mode');
+    }
+    localStorage.setItem('quizfeedback_dys_mode', String(isDysMode));
+  }, [isDysMode]);
 
   const showNotification = (msg: string) => {
     setNotification(msg);
     setTimeout(() => setNotification(null), 3500);
   };
 
-  // Chargement des quiz depuis l'API locale SQLite
+  // Chargement des quiz depuis l'API locale
   const loadQuizzes = async () => {
     setIsLoading(true);
     try {
@@ -42,7 +48,7 @@ export const App: React.FC = () => {
         setQuizzes(data.quizzes || []);
       }
     } catch (e) {
-      console.warn('API non joignable ou mode statique, consultation localStorage');
+      console.warn('API non joignable, consultation localStorage');
       const saved = localStorage.getItem('quizfeedback_quizzes');
       if (saved) {
         try { setQuizzes(JSON.parse(saved)); } catch (err) {}
@@ -56,34 +62,33 @@ export const App: React.FC = () => {
     loadQuizzes();
   }, []);
 
-  // Synchronisation localStorage par sécurité
   useEffect(() => {
     if (quizzes.length > 0) {
       localStorage.setItem('quizfeedback_quizzes', JSON.stringify(quizzes));
     }
   }, [quizzes]);
 
-  // Sauvegarde d'un quiz
   const handleSaveQuiz = async (updatedQuiz: H5PQuiz) => {
-    try {
-      const res = await fetch(`/api/h5p/quiz/${updatedQuiz.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedQuiz)
-      });
-
-      if (res.ok) {
-        showNotification('Quiz et rétroactions enregistrés avec succès !');
-      }
-    } catch (e) {
-      console.warn('Sauvegarde distante échouée, sauvegarde locale');
-    }
-
     setQuizzes(prev => prev.map(q => q.id === updatedQuiz.id ? updatedQuiz : q));
     setSelectedQuiz(updatedQuiz);
+
+    try {
+      await fetch(`/api/h5p/quiz/${updatedQuiz.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: updatedQuiz.title,
+          theme: updatedQuiz.theme,
+          description: updatedQuiz.description,
+          content: updatedQuiz.content,
+          options: updatedQuiz.options
+        })
+      });
+    } catch (e) {
+      console.warn('Backend sync failed, saved in local state:', e);
+    }
   };
 
-  // Suppression d'un quiz
   const handleDeleteQuiz = async (quizId: string) => {
     try {
       await fetch(`/api/h5p/quiz/${quizId}`, { method: 'DELETE' });
@@ -97,7 +102,6 @@ export const App: React.FC = () => {
     showNotification('Quiz supprimé.');
   };
 
-  // Importation d'un fichier H5P ou JSON
   const handleFileUpload = async (file: File) => {
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -122,7 +126,7 @@ export const App: React.FC = () => {
         await loadQuizzes();
         if (data.quiz) {
           setSelectedQuiz(data.quiz);
-          setActiveView('feedback');
+          setActiveView('prompt');
         }
       } catch (err: any) {
         alert("Erreur lors de l'importation : " + err.message);
@@ -131,33 +135,6 @@ export const App: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  // Importation directe depuis JSON
-  const handleImportJson = async (jsonStr: string) => {
-    try {
-      const res = await fetch('/api/h5p/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawJson: jsonStr })
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Format JSON non valide');
-      }
-
-      const data = await res.json();
-      showNotification(`Quiz importé avec succès !`);
-      await loadQuizzes();
-      if (data.quiz) {
-        setSelectedQuiz(data.quiz);
-        setActiveView('feedback');
-      }
-    } catch (err: any) {
-      alert("Erreur importation JSON : " + err.message);
-    }
-  };
-
-  // Chargement du modèle exemple
   const handleLoadSample = async (sample: Partial<H5PQuiz>) => {
     try {
       const res = await fetch('/api/h5p/import', {
@@ -172,7 +149,7 @@ export const App: React.FC = () => {
         await loadQuizzes();
         if (data.quiz) {
           setSelectedQuiz(data.quiz);
-          setActiveView('feedback');
+          setActiveView('prompt');
         }
       }
     } catch (e: any) {
@@ -180,7 +157,6 @@ export const App: React.FC = () => {
     }
   };
 
-  // Création d'un quiz vierge
   const handleCreateNew = async () => {
     const newQuiz: Partial<H5PQuiz> = {
       title: 'Nouveau Quiz',
@@ -204,108 +180,55 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100/70 font-sans text-slate-900">
+    <div className={styles.appContainer}>
       
       {/* Toast Notification */}
       {notification && (
-        <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold flex items-center gap-2 animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className={styles.toast}>
+          <CheckCircle2 className={styles.toastIcon} />
           <span>{notification}</span>
         </div>
       )}
 
-      {/* Top Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      {/* Barre supérieure épurée */}
+      <header className={styles.header}>
+        <div className={styles.headerInner}>
           
-          {/* Logo & Titre */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            {activeView !== 'list' ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveView('list');
-                  loadQuizzes();
-                }}
-                className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 font-bold text-xs py-1.5 px-2.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Tous les quiz</span>
-              </button>
-            ) : (
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-700 to-indigo-600 text-white flex items-center justify-center shadow-xs">
-                  <Brain className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-base font-black text-slate-900 tracking-tight leading-none">
-                      QuizFeedback
-                    </h1>
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Autonome • Sans Identifiant
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 leading-none mt-1 hidden sm:block">
-                    Quiz H5P • Rétroactions Pascal Pansu • Export LogiQuiz (La Digitale)
-                  </p>
-                </div>
-              </div>
-            )}
+          {/* Nom de l'application */}
+          <div 
+            onClick={() => {
+              setActiveView('list');
+              setSelectedQuiz(null);
+            }} 
+            className={styles.brandTitleWrap}
+            style={{ cursor: 'pointer' }}
+          >
+            <span className={styles.brandTitle}>Quiz Feedback IA</span>
           </div>
 
-          {/* Raccourcis externes (Quiz Wizard, LogiQuiz, La Digitale) */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <a
-              href="https://app.getquizwizard.com/create-content/source"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition-all shadow-2xs"
-              title="Accéder à l'interface de Quiz Wizard pour créer des questions"
+          {/* Commutateur Mode DYS */}
+          <div className={styles.headerRight}>
+            <div 
+              className={`${styles.switchWrap} ${isDysMode ? styles.switchWrapActive : ''}`} 
+              onClick={() => setIsDysMode(prev => !prev)} 
+              style={{ cursor: 'pointer' }}
+              title={isDysMode ? "Désactiver le mode DYS" : "Activer le mode de lecture DYS"}
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span className="hidden sm:inline">Quiz Wizard</span>
-              <ExternalLink className="w-3 h-3 text-amber-500" />
-            </a>
-
-            <a
-              href="https://ladigitale.dev/logiquiz/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold transition-all shadow-2xs"
-              title="Télécharger LogiQuiz pour lire et modifier vos fichiers H5P hors ligne"
-            >
-              <Laptop className="w-3.5 h-3.5 text-emerald-600" />
-              <span className="hidden sm:inline">LogiQuiz</span>
-              <ExternalLink className="w-3 h-3 text-emerald-500" />
-            </a>
-
-            <a
-              href="https://digiquiz.ladigitale.dev/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-900 text-xs font-bold transition-all shadow-2xs"
-              title="Diffuser votre quiz en ligne sans compte sur Digiquiz"
-            >
-              <Share2 className="w-3.5 h-3.5 text-teal-600" />
-              <span className="hidden sm:inline">Digiquiz</span>
-              <ExternalLink className="w-3 h-3 text-teal-500" />
-            </a>
+              <BookOpen style={{ width: 16, height: 16, color: isDysMode ? 'var(--color-apps-blue)' : 'var(--color-text-muted)' }} />
+              <span className={styles.switchLabel}>Mode DYS</span>
+            </div>
           </div>
 
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      {/* Contenu Principal */}
+      <main className={styles.mainContent}>
         
-        {/* Vue 1 : Liste des Quiz & Guide Quiz Wizard */}
+        {/* Vue 1 : Liste des Quiz & Parcours en 5 étapes */}
         {activeView === 'list' && (
-          <div className="space-y-6">
-            <QuizWizardHelper
-              onLoadSample={handleLoadSample}
-              onImportJson={handleImportJson}
-            />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <StepBanner />
 
             <QuizListManager
               quizzes={quizzes}
@@ -314,7 +237,10 @@ export const App: React.FC = () => {
                 setSelectedQuiz(quiz);
                 setActiveView(view);
               }}
-              onExportQuiz={(quiz) => setExportModalQuiz(quiz)}
+              onExportQuiz={(quiz) => {
+                setSelectedQuiz(quiz);
+                setActiveView('export');
+              }}
               onDeleteQuiz={handleDeleteQuiz}
               onFileUpload={handleFileUpload}
               onCreateNew={handleCreateNew}
@@ -322,108 +248,106 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* Vue 2 : Moteur de Rétroactions Pascal Pansu */}
-        {activeView === 'feedback' && selectedQuiz && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+        {/* Étape 2 & Étape 3 : Moteur de Rétroactions Pascal Pansu & Contrôle */}
+        {(activeView === 'feedback' || activeView === 'prompt' || activeView === 'control') && selectedQuiz && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <button
                 type="button"
                 onClick={() => {
                   setActiveView('list');
                   loadQuizzes();
                 }}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"
+                className={styles.circleBtn}
+                style={{ width: 'auto', padding: '0.4rem 0.8rem', borderRadius: '8px', gap: '0.4rem' }}
               >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Retour à la liste des quiz</span>
+                <ArrowLeft style={{ width: 16, height: 16 }} />
+                <span>Retour au tableau de bord</span>
               </button>
 
-              <div className="flex items-center gap-2">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <button
                   type="button"
                   onClick={() => setActiveView('play')}
-                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs shadow-2xs"
+                  className={styles.circleBtn}
+                  style={{ width: 'auto', padding: '0.4rem 0.8rem', borderRadius: '8px' }}
                 >
-                  Tester la simulation
+                  <span>Tester la simulation</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setExportModalQuiz(selectedQuiz)}
-                  className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-2xs flex items-center gap-1.5"
+                  onClick={() => setActiveView('export')}
+                  className={styles.circleBtnActive}
+                  style={{ width: 'auto', padding: '0.4rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Exporter LogiQuiz</span>
+                  <Download style={{ width: 14, height: 14 }} />
+                  <span>Étape 4 : Publier</span>
                 </button>
               </div>
             </div>
 
             <PansuFeedbackEngine
               quiz={selectedQuiz}
+              initialTab={activeView === 'prompt' ? 'prompt' : (activeView === 'control' ? 'import' : undefined)}
               onSave={handleSaveQuiz}
               onClose={() => setActiveView('list')}
-              onNavigateToExport={() => setExportModalQuiz(selectedQuiz)}
+              onNavigateToPlay={() => setActiveView('play')}
+              onNavigateToExport={() => setActiveView('export')}
             />
           </div>
         )}
 
-        {/* Vue 3 : Simulateur & Lecteur de test */}
+        {/* Vue 3 : Simulateur élève */}
         {activeView === 'play' && selectedQuiz && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <button
                 type="button"
-                onClick={() => setActiveView('list')}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"
+                onClick={() => setActiveView('control')}
+                className={styles.circleBtn}
+                style={{ width: 'auto', padding: '0.4rem 0.8rem', borderRadius: '8px', gap: '0.4rem' }}
               >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Retour à la liste des quiz</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveView('feedback')}
-                className="px-3.5 py-1.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-2xs flex items-center gap-1.5"
-              >
-                <Brain className="w-3.5 h-3.5" />
-                <span>Modifier les Feedbacks Pansu</span>
+                <ArrowLeft style={{ width: 16, height: 16 }} />
+                <span>Revenir à l'édition des rétroactions</span>
               </button>
             </div>
 
             <H5PQuizPlayer
               quiz={selectedQuiz}
-              onEditFeedbacks={() => setActiveView('feedback')}
-              onExport={() => setExportModalQuiz(selectedQuiz)}
+              onEditFeedbacks={() => setActiveView('control')}
+              onExport={() => setActiveView('export')}
               onBackToList={() => setActiveView('list')}
             />
           </div>
         )}
 
+        {/* Vue 4 : Exportation & Diffusion */}
+        {activeView === 'export' && selectedQuiz && (
+          <ExportView
+            quiz={selectedQuiz}
+            onBackToFeedback={() => setActiveView('control')}
+            onBackToPlay={() => setActiveView('play')}
+            onBackToList={() => {
+              setSelectedQuiz(null);
+              setActiveView('list');
+              loadQuizzes();
+            }}
+          />
+        )}
+
       </main>
 
-      {/* Modal Export LogiQuiz */}
-      {exportModalQuiz && (
-        <LogiQuizExportModal
-          quiz={exportModalQuiz}
-          isOpen={Boolean(exportModalQuiz)}
-          onClose={() => setExportModalQuiz(null)}
-        />
-      )}
-
-      {/* Footer Pédagogique */}
-      <footer className="border-t border-slate-200 bg-white py-4 text-xs text-slate-500 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800">QuizFeedback</span>
-            <span>•</span>
-            <span>Évaluation Formative &amp; Régulation Cognitive (Pascal Pansu)</span>
+      {/* Footer officiel épuré */}
+      <footer className={styles.footer}>
+        <div className={styles.footerInner}>
+          <div className={styles.footerBrand}>
+            <span style={{ fontWeight: 800, color: 'var(--color-apps-darkblue)', fontSize: '0.95rem' }}>Quiz Feedback IA</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-slate-400 text-[11px]">
-            <span>100% Hors Ligne possible (DMG / EXE)</span>
+          <div className={styles.footerLinks}>
+            <span>Rétroactions formatives Pascal Pansu</span>
             <span>•</span>
-            <span>Standard H5P.QuestionSet</span>
-            <span>•</span>
-            <span>Compatible LogiQuiz &amp; Digiquiz (La Digitale)</span>
+            <span>Standard H5P &amp; La Digitale</span>
           </div>
         </div>
       </footer>

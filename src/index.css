@@ -1,20 +1,193 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ==========================================================================
+   QuizFeedback - Global Reset, CSS Custom Properties & DYS Mode
+   Pure CSS without Tailwind CSS dependency
+   ========================================================================== */
 
-@layer base {
-  body {
-    @apply antialiased text-slate-900 bg-slate-50;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+/* Modern CSS Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Fonts & Typography */
+  --font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  
+  --line-height-base: 1.5;
+  --letter-spacing-base: -0.01em;
+  --word-spacing-base: 0;
+
+  /* Apps Education Palette */
+  --color-bg: #f4f6f9;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f8fafc;
+  --color-surface-muted: #e5e7eb;
+  --color-text-main: #1e293b;
+  --color-text-title: #000091; /* Bleu France / Apps Education */
+  --color-text-title-dark: #00246b;
+  --color-text-sub: #475569;
+  --color-text-muted: #64748b;
+  --color-text-light: #94a3b8;
+  --color-border: #e2e8f0;
+  --color-border-subtle: #f1f5f9;
+  --color-border-strong: #cbd5e1;
+
+  /* Apps Education Brand Colors */
+  --color-apps-blue: #000091;
+  --color-apps-darkblue: #00246b;
+  --color-apps-orange: #ff6600; /* Active tab indicator */
+  --color-apps-orange-hover: #e65a00;
+  --color-apps-cyan: #0090f5;
+
+  /* Primary State Blue */
+  --color-primary: #000091;
+  --color-primary-hover: #000074;
+  --color-primary-light: #f0f4ff;
+  --color-primary-border: #d4e0fc;
+  --color-primary-text: #000091;
+
+  /* Success / Status badges (e.g. "membre", "administrateur") */
+  --color-success: #16a34a;
+  --color-success-hover: #15803d;
+  --color-success-light: #f0fdf4;
+  --color-success-border: #bbf7d0;
+  --color-success-text: #16a34a;
+
+  /* Warning / Amber */
+  --color-warning: #d97706;
+  --color-warning-hover: #b45309;
+  --color-warning-light: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-warning-text: #92400e;
+
+  /* Error / Red */
+  --color-error: #dc2626;
+  --color-error-hover: #b91c1c;
+  --color-error-light: #fef2f2;
+  --color-error-border: #fecaca;
+  --color-error-text: #991b1b;
+
+  /* Indigo */
+  --color-indigo: #4338ca;
+  --color-indigo-hover: #3730a3;
+  --color-indigo-light: #eef2ff;
+  --color-indigo-border: #c7d2fe;
+  --color-indigo-text: #3730a3;
+
+  /* Teal (DigiQuiz / La Digitale) */
+  --color-teal: #0d9488;
+  --color-teal-hover: #0f766e;
+  --color-teal-light: #f0fdfa;
+  --color-teal-border: #99f6e4;
+  --color-teal-text: #115e59;
+
+  /* Purple / Pansu Feedback */
+  --color-purple: #6d28d9;
+  --color-purple-hover: #5b21b6;
+  --color-purple-light: #f5f3ff;
+  --color-purple-border: #ddd6fe;
+  --color-purple-text: #5b21b6;
+
+  /* Shadows */
+  --shadow-2xs: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* Border Radii (matching apps.education rounded corners) */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+}
+
+html, body {
+  min-height: 100%;
+  font-family: var(--font-family);
+  font-size: 15px;
+  line-height: var(--line-height-base);
+  letter-spacing: var(--letter-spacing-base);
+  word-spacing: var(--word-spacing-base);
+  background-color: var(--color-bg);
+  color: var(--color-text-main);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ==========================================================================
+   DYS Mode (Lecture adaptée, contrastes apaisants, espacement généreux)
+   ========================================================================== */
+body.dys-mode {
+  --font-family: 'Lexend', sans-serif !important;
+  --line-height-base: 1.8 !important;
+  --letter-spacing-base: 0.04em !important;
+  --word-spacing-base: 0.1em !important;
+  --color-bg: #FAF9F6 !important;
+  --color-surface: #FFFEFD !important;
+  --color-surface-subtle: #F4F1EA !important;
+  --color-text-main: #1e293b !important;
+  background-color: var(--color-bg) !important;
+}
+
+body.dys-mode p,
+body.dys-mode span,
+body.dys-mode li,
+body.dys-mode label,
+body.dys-mode button,
+body.dys-mode input,
+body.dys-mode textarea,
+body.dys-mode div {
+  line-height: var(--line-height-base);
+  letter-spacing: var(--letter-spacing-base);
+  word-spacing: var(--word-spacing-base);
+}
+
+/* ==========================================================================
+   Animations
+   ========================================================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* Animations et styles personnalisés */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 .animate-fade-in {
-  animation: fadeIn 0.2s ease-out forwards;
+  animation: fadeIn 0.18s ease-out forwards;
 }

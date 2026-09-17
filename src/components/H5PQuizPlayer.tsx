@@ -13,6 +13,7 @@ import {
   Download
 } from 'lucide-react';
 import { H5PQuiz, H5PQuestion, H5PAnswer } from '../types';
+import styles from './H5PQuizPlayer.module.css';
 
 interface H5PQuizPlayerProps {
   quiz: H5PQuiz;
@@ -20,6 +21,10 @@ interface H5PQuizPlayerProps {
   onExport?: () => void;
   onBackToList?: () => void;
 }
+
+const checkIsCorrect = (ans: H5PAnswer) => {
+  return Boolean(ans.correct === true || (ans as any).correct === 'true' || (ans as any).isCorrect === true || (ans as any).isCorrect === 'true');
+};
 
 export const H5PQuizPlayer: React.FC<H5PQuizPlayerProps> = ({
   quiz,
@@ -38,20 +43,34 @@ export const H5PQuizPlayer: React.FC<H5PQuizPlayerProps> = ({
   const isCurrentValidated = Boolean(validatedQuestions[currentIdx]);
   const currentSelectedId = selectedAnswers[currentIdx];
 
-  const handleSelectOption = (ansId: string) => {
+  const handleSelectOption = (ansId: string, isCorr: boolean) => {
     if (isCurrentValidated) return;
+
     setSelectedAnswers(prev => ({ ...prev, [currentIdx]: ansId }));
-  };
-
-  const handleValidateAnswer = () => {
-    if (!currentSelectedId || isCurrentValidated) return;
-
     setValidatedQuestions(prev => ({ ...prev, [currentIdx]: true }));
 
-    const chosen = (currentQ.answers || []).find(a => a.id === currentSelectedId);
-    if (chosen?.correct) {
+    if (isCorr) {
       setScore(prev => prev + 1);
     }
+  };
+
+  const handleRetryCurrent = () => {
+    const prevAnsId = selectedAnswers[currentIdx];
+    const prevChosen = (currentQ?.answers || []).find((a, aIdx) => (a.id || `ans_${currentIdx + 1}_${aIdx + 1}`) === prevAnsId);
+    if (prevChosen && checkIsCorrect(prevChosen)) {
+      setScore(prev => Math.max(0, prev - 1));
+    }
+
+    setSelectedAnswers(prev => {
+      const copy = { ...prev };
+      delete copy[currentIdx];
+      return copy;
+    });
+    setValidatedQuestions(prev => {
+      const copy = { ...prev };
+      delete copy[currentIdx];
+      return copy;
+    });
   };
 
   const handleNext = () => {
@@ -78,12 +97,15 @@ export const H5PQuizPlayer: React.FC<H5PQuizPlayerProps> = ({
 
   if (!questions.length) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3">
-        <p className="text-sm font-bold text-slate-700">Ce quiz ne contient aucune question à jouer.</p>
+      <div className={styles.playerCard} style={{ padding: '2rem', textAlign: 'center' }}>
+        <p style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '1rem' }}>
+          Ce quiz ne contient aucune question à jouer.
+        </p>
         <button
           type="button"
           onClick={onBackToList}
-          className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl"
+          className={styles.btnValidate}
+          style={{ margin: '0 auto' }}
         >
           Retour à la liste
         </button>
@@ -94,45 +116,41 @@ export const H5PQuizPlayer: React.FC<H5PQuizPlayerProps> = ({
   // Écran de fin / Résultat
   if (isFinished) {
     const percentage = Math.round((score / questions.length) * 100);
-    const passThreshold = quiz.options?.passPercentage || 60;
+    const passThreshold = quiz.options?.passPercentage || 50;
     const isPassed = percentage >= passThreshold;
 
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6 sm:p-8 max-w-2xl mx-auto text-center space-y-6 animate-fade-in">
-        <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shadow-inner">
-          <Trophy className="w-8 h-8" />
+      <div className={styles.finishCard}>
+        <div className={styles.trophyWrap}>
+          <Trophy style={{ width: 32, height: 32 }} />
         </div>
 
         <div>
-          <h2 className="text-xl font-black text-slate-900">Test du Quiz Terminé !</h2>
-          <p className="text-xs text-slate-500 mt-1">{quiz.title}</p>
+          <h2 className={styles.finishTitle}>Test du Quiz Terminé !</h2>
+          <p className={styles.finishSubtitle}>{quiz.title}</p>
         </div>
 
-        <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 inline-block min-w-[240px]">
-          <div className="text-4xl font-black text-slate-900">
-            {score} <span className="text-lg text-slate-400 font-medium">/ {questions.length}</span>
+        <div className={styles.scoreBox}>
+          <div className={styles.scoreNumber}>
+            {score} <span className={styles.scoreDenom}>/ {questions.length}</span>
           </div>
-          <div className="text-xs font-bold mt-1 text-slate-600">
+          <div className={styles.scorePercent}>
             Score de réussite : {percentage}%
           </div>
-          <div className="mt-3">
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-              isPassed 
-                ? 'bg-emerald-100 text-emerald-800' 
-                : 'bg-amber-100 text-amber-800'
-            }`}>
+          <div>
+            <span className={isPassed ? styles.passBadgeSuccess : styles.passBadgeWarning}>
               {isPassed ? '✓ Objectif d’apprentissage validé' : 'Notions à consolider'}
             </span>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+        <div className={styles.finishActionRow}>
           <button
             type="button"
             onClick={handleRestart}
-            className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
+            className={styles.btnReplay}
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw style={{ width: 16, height: 16 }} />
             <span>Rejouer le test</span>
           </button>
 
@@ -140,9 +158,9 @@ export const H5PQuizPlayer: React.FC<H5PQuizPlayerProps> = ({
             <button
               type="button"
               onClick={onEditFeedbacks}
-              className="px-4 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer"
+              className={styles.btnAdjustFeedbacks}
             >
-              <Edit3 className="w-4 h-4" />
+              <Edit3 style={{ width: 16, height: 16 }} />
               <span>Ajuster les Feedbacks Pansu</span>
             </button>
           )}
@@ -151,10 +169,10 @@ export const H5PQuizPlayer: React.FC<H5PQuizPlayerProps> = ({
             <button
               type="button"
               onClick={onExport}
-              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer"
+              className={styles.btnPublishFromPlayer}
             >
-              <Download className="w-4 h-4" />
-              <span>Exporter pour LogiQuiz</span>
+              <Download style={{ width: 16, height: 16 }} />
+              <span>Étape 4 : Diffuser &amp; Exporter (DigiQuiz / LogiQuiz)</span>
             </button>
           )}
         </div>
@@ -162,160 +180,185 @@ export const H5PQuizPlayer: React.FC<H5PQuizPlayerProps> = ({
     );
   }
 
-  const chosenAns = (currentQ.answers || []).find(a => a.id === currentSelectedId);
+  const chosenAns = currentQ ? (currentQ.answers || []).find((a, aIdx) => (a.id || `ans_${currentIdx + 1}_${aIdx + 1}`) === currentSelectedId) : undefined;
+  const isChosenCorrect = chosenAns ? checkIsCorrect(chosenAns) : false;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-w-3xl mx-auto">
+    <div className={styles.playerCard}>
       
       {/* Header Player */}
-      <div className="p-4 sm:p-5 bg-slate-900 text-white flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-black text-xs">
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <div className={styles.questionNumBadge}>
             {currentIdx + 1}
           </div>
           <div>
-            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+            <span className={styles.headerSub}>
               Simulation Interactive LogiQuiz / H5P
             </span>
-            <h3 className="text-xs sm:text-sm font-bold text-slate-100 line-clamp-1">
+            <h3 className={styles.headerTitle}>
               {quiz.title}
             </h3>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+        <div className={styles.headerProgress}>
           <span>Question {currentIdx + 1} sur {questions.length}</span>
         </div>
       </div>
 
       {/* Barre de progression */}
-      <div className="w-full bg-slate-200 h-1.5">
+      <div className={styles.progressBarTrack}>
         <div 
-          className="bg-amber-500 h-1.5 transition-all duration-300"
+          className={styles.progressBarFill}
           style={{ width: `${((currentIdx + 1) / questions.length) * 100}%` }}
         />
       </div>
 
       {/* Zone Question */}
-      <div className="p-5 sm:p-6 space-y-5">
+      <div className={styles.contentBody}>
         
-        <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-relaxed">
+        <h2 className={styles.questionStatement}>
           {currentQ.question}
         </h2>
 
         {/* Liste des Choix */}
-        <div className="space-y-2.5">
+        <div className={styles.optionsList}>
           {(currentQ.answers || []).map((ans, aIdx) => {
-            const isSelected = currentSelectedId === ans.id;
-            let btnClass = "border-slate-200 bg-white hover:bg-slate-50 text-slate-800";
+            const ansId = ans.id || `ans_${currentIdx + 1}_${aIdx + 1}`;
+            const isSelected = currentSelectedId === ansId;
+            const isCorr = checkIsCorrect(ans);
+            let btnStyle = styles.optionButtonDefault;
 
             if (isCurrentValidated) {
-              if (ans.correct) {
-                btnClass = "border-emerald-500 bg-emerald-50/80 text-emerald-900 font-bold";
-              } else if (isSelected && !ans.correct) {
-                btnClass = "border-amber-400 bg-amber-50/80 text-amber-900 font-semibold";
+              if (isCorr) {
+                btnStyle = styles.optionButtonCorrect;
+              } else if (isSelected && !isCorr) {
+                btnStyle = styles.optionButtonWrong;
               } else {
-                btnClass = "border-slate-200 bg-slate-50 text-slate-400 opacity-60";
+                btnStyle = styles.optionButtonDimmed;
               }
             } else if (isSelected) {
-              btnClass = "border-amber-500 bg-amber-50/60 text-amber-900 font-bold ring-2 ring-amber-500/20";
+              btnStyle = styles.optionButtonSelected;
             }
 
             return (
               <button
-                key={ans.id || aIdx}
+                key={ansId}
                 type="button"
                 disabled={isCurrentValidated}
-                onClick={() => handleSelectOption(ans.id)}
-                className={`w-full p-3.5 sm:p-4 rounded-xl border text-left text-xs sm:text-sm flex items-start gap-3 transition-all cursor-pointer disabled:cursor-default ${btnClass}`}
+                onClick={() => handleSelectOption(ansId, isCorr)}
+                className={`${styles.optionButton} ${btnStyle}`}
               >
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold mt-0.5 border ${
-                  isSelected ? 'border-amber-500 bg-amber-500 text-white' : 'border-slate-300 text-slate-600'
+                <span className={`${styles.optionLetter} ${
+                  isCurrentValidated 
+                    ? (isCorr ? styles.optionLetterCorrect : (isSelected ? styles.optionLetterWrong : styles.optionLetterDefault))
+                    : (isSelected ? styles.optionLetterSelected : styles.optionLetterDefault)
                 }`}>
                   {String.fromCharCode(65 + aIdx)}
                 </span>
-                <span className="flex-1 leading-snug">{ans.text}</span>
+                <span className={styles.optionText}>{ans.text}</span>
 
-                {isCurrentValidated && ans.correct && (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                {isCurrentValidated && isCorr && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--color-success)', fontWeight: 800, fontSize: '0.75rem', flexShrink: 0 }}>
+                    <CheckCircle2 style={{ width: 18, height: 18 }} />
+                    <span>Bonne réponse</span>
+                  </div>
                 )}
-                {isCurrentValidated && isSelected && !ans.correct && (
-                  <HelpCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                {isCurrentValidated && isSelected && !isCorr && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--color-error)', fontWeight: 800, fontSize: '0.75rem', flexShrink: 0 }}>
+                    <XCircle style={{ width: 18, height: 18 }} />
+                    <span>Votre choix</span>
+                  </div>
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* Rétroaction formative Pascal Pansu immédiate après validation */}
+        {/* Rétroaction formative Pascal Pansu immédiate après sélection */}
         {isCurrentValidated && chosenAns && (
-          <div className={`p-4 rounded-xl border animate-fade-in text-xs leading-relaxed space-y-1.5 ${
-            chosenAns.correct 
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
-              : 'bg-purple-50 border-purple-200 text-purple-900'
-          }`}>
-            <div className="flex items-center gap-2 font-black">
-              {chosenAns.correct ? (
+          <div className={`${styles.feedbackBox} ${isChosenCorrect ? styles.feedbackBoxSuccess : styles.feedbackBoxRegulation}`}>
+            <div className={styles.feedbackHeader}>
+              {isChosenCorrect ? (
                 <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Validation formative :</span>
+                  <CheckCircle2 style={{ width: 18, height: 18, color: 'var(--color-success)', flexShrink: 0 }} />
+                  <span>Validation formative : Excellente réponse !</span>
                 </>
               ) : (
                 <>
-                  <Brain className="w-4 h-4 text-purple-600" />
-                  <span>Piste de régulation (Pascal Pansu) :</span>
+                  <Brain style={{ width: 18, height: 18, color: 'var(--color-purple)', flexShrink: 0 }} />
+                  <span>Piste de régulation (Logique Pascal Pansu) :</span>
                 </>
               )}
             </div>
 
-            <p className="pl-6 font-medium">
-              {chosenAns.feedback || (chosenAns.correct 
-                ? "Excellente réponse !" 
+            <p className={styles.feedbackContent}>
+              {chosenAns.feedback?.trim() || (isChosenCorrect 
+                ? "Bravo ! Vous avez parfaitement identifié la bonne réponse." 
                 : "Analysez attentivement les indices de l'énoncé et la consigne pour surmonter ce piège fréquent.")}
             </p>
 
             {currentQ.explanation && (
-              <div className="mt-2 pt-2 border-t border-purple-200/60 pl-6 text-slate-600">
-                <span className="font-bold text-slate-700">Rappel essentiel : </span>
+              <div className={styles.feedbackReminder}>
+                <span style={{ fontWeight: 700, color: 'var(--color-text-main)' }}>Rappel notionnel : </span>
                 {currentQ.explanation}
               </div>
             )}
+
+            {/* Boutons d'action directe sous la rétroaction */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={handleRetryCurrent}
+                className={styles.btnRetry}
+                title="Tester une autre option pour cette question"
+              >
+                <RotateCcw style={{ width: 14, height: 14 }} />
+                <span>Tester une autre proposition</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleNext}
+                className={styles.btnNext}
+              >
+                <span>{currentIdx < questions.length - 1 ? 'Question suivante' : 'Voir le bilan final'}</span>
+                <ArrowRight style={{ width: 16, height: 16 }} />
+              </button>
+            </div>
           </div>
         )}
 
       </div>
 
       {/* Footer Player / Boutons d'action */}
-      <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+      <div className={styles.playerFooter}>
         <button
           type="button"
           onClick={handlePrev}
           disabled={currentIdx === 0}
-          className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors disabled:opacity-40 flex items-center gap-1 cursor-pointer"
+          className={styles.btnPrev}
+          style={{ opacity: currentIdx === 0 ? 0.4 : 1 }}
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Précédente</span>
+          <ArrowLeft style={{ width: 14, height: 14 }} />
+          <span>Question précédente</span>
         </button>
 
-        <div className="flex items-center gap-2">
-          {!isCurrentValidated ? (
-            <button
-              type="button"
-              onClick={handleValidateAnswer}
-              disabled={!currentSelectedId}
-              className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all shadow-xs disabled:opacity-40 cursor-pointer"
-            >
-              Vérifier la réponse
-            </button>
-          ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {isCurrentValidated ? (
             <button
               type="button"
               onClick={handleNext}
-              className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className={styles.btnNext}
             >
-              <span>{currentIdx < questions.length - 1 ? 'Question suivante' : 'Voir le bilan'}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>{currentIdx < questions.length - 1 ? 'Question suivante' : 'Voir le bilan final'}</span>
+              <ArrowRight style={{ width: 16, height: 16 }} />
             </button>
+          ) : (
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+              Cliquez sur une proposition ci-dessus pour la tester
+            </span>
           )}
         </div>
       </div>

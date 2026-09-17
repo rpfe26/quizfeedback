@@ -1,21 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { 
-  Plus, 
   Upload, 
   Brain, 
   Play, 
   Download, 
   Trash2, 
-  Sparkles, 
-  FileCode, 
-  CheckCircle2, 
-  Clock, 
   Layers,
-  FileQuestion,
-  HelpCircle,
-  AlertCircle
+  FileQuestion
 } from 'lucide-react';
 import { H5PQuiz } from '../types';
+import styles from './QuizListManager.module.css';
 
 interface QuizListManagerProps {
   quizzes: H5PQuiz[];
@@ -23,7 +17,7 @@ interface QuizListManagerProps {
   onExportQuiz: (quiz: H5PQuiz) => void;
   onDeleteQuiz: (quizId: string) => void;
   onFileUpload: (file: File) => void;
-  onCreateNew: () => void;
+  onCreateNew?: () => void;
   isLoading?: boolean;
 }
 
@@ -63,7 +57,7 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className={styles.container}>
       
       {/* Zone de Dépôt Drag & Drop */}
       <div
@@ -71,95 +65,138 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`border-2 border-dashed rounded-2xl p-6 sm:p-8 text-center transition-all cursor-pointer ${
-          isDragging 
-            ? 'border-purple-500 bg-purple-50/60 scale-99' 
-            : 'border-slate-300 bg-white hover:border-slate-400 hover:bg-slate-50/50 shadow-xs'
-        }`}
+        className={`${styles.dropzone} ${isDragging ? styles.dropzoneActive : ''}`}
       >
         <input
           ref={fileInputRef}
           type="file"
           accept=".h5p,.json"
           onChange={handleFileInputChange}
-          className="hidden"
+          style={{ display: 'none' }}
         />
 
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center shadow-xs">
-            <Upload className="w-6 h-6" />
+        <div className={styles.dropzoneContent}>
+          <div className={styles.dropzoneIconWrap}>
+            <Upload style={{ width: 22, height: 22 }} />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-800">
-              Glissez-déposez ici votre quiz exporté depuis Quiz Wizard (<span className="text-purple-700">.h5p</span> ou <span className="text-purple-700">.json</span>)
+            <h3 className={styles.dropzoneTitle}>
+              Glissez-déposez ici votre quiz exporté (<span className={styles.dropzoneHighlight}>.h5p</span> ou <span className={styles.dropzoneHighlight}>.json</span>)
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              ou cliquez pour parcourir vos fichiers sur votre ordinateur
+            <p className={styles.dropzoneSub}>
+              ou cliquez pour parcourir les fichiers de votre ordinateur
             </p>
           </div>
         </div>
       </div>
 
-      {/* Barre d'action & Titre de section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-base font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <span>Mes Quiz &amp; Rétroactions</span>
-            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-200 text-slate-700">
+      {/* Panneau 1 : Mes Quiz & Activités */}
+      <div className={styles.panelContainer}>
+        <div className={styles.panelHeader}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <h2 className={styles.panelTitle}>
+              <span>Mes quiz enregistrés</span>
+            </h2>
+            <span className={styles.countBadge}>
               {quizzes.length}
             </span>
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Gérez vos quiz, enrichissez-les avec la méthode Pascal Pansu et exportez pour LogiQuiz.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onCreateNew}
-            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Créer un quiz vide</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Grille de Quiz */}
-      {isLoading ? (
-        <div className="p-12 text-center text-xs font-bold text-slate-400">
-          Chargement de vos quiz...
-        </div>
-      ) : quizzes.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-            <FileQuestion className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-bold text-slate-800">Aucun quiz enregistré pour le moment</h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            Exportez votre premier quiz depuis <strong>Quiz Wizard</strong> puis déposez-le ci-dessus, ou cliquez sur <em>Charger l'exemple</em> dans le guide.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {quizzes.map(quiz => {
-            const qCount = quiz.content?.questions?.length || quiz.total_questions || 0;
-            const fbConfigured = quiz.feedbacks_configured ?? (quiz.content?.questions || []).reduce((acc, q) => {
-              return acc + (q.answers || []).filter(a => Boolean(a.feedback && a.feedback.trim())).length;
-            }, 0);
 
-            return (
-              <div
-                key={quiz.id}
-                className="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
-              >
-                {/* Haut de carte */}
-                <div className="p-5 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600">
-                      {quiz.theme || 'Général'}
-                    </span>
+          {onCreateNew && (
+            <button
+              type="button"
+              onClick={onCreateNew}
+              className={styles.btnActionPrimary}
+              style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
+            >
+              + Nouveau quiz
+            </button>
+          )}
+        </div>
+
+        {/* Liste des quiz : un élément par ligne */}
+        {isLoading ? (
+          <div className={styles.emptyState}>
+            Chargement de vos quiz...
+          </div>
+        ) : quizzes.length === 0 ? (
+          <div className={styles.emptyState}>
+            <FileQuestion style={{ width: 36, height: 36, margin: '0 auto 0.75rem', opacity: 0.5 }} />
+            <p style={{ fontWeight: 700, color: 'var(--color-apps-darkblue)' }}>Aucun quiz enregistré pour le moment</p>
+            <p style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+              Importez un fichier .h5p généré sur Quiz Wizard ou utilisez le guide ci-dessus.
+            </p>
+          </div>
+        ) : (
+          <div className={styles.quizList}>
+            {quizzes.map((quiz) => {
+              const qCount = quiz.content?.questions?.length || quiz.total_questions || 0;
+              const fbConfigured = quiz.feedbacks_configured ?? (quiz.content?.questions || []).reduce((acc, q) => {
+                return acc + (q.answers || []).filter(a => Boolean(a.feedback && a.feedback.trim())).length;
+              }, 0);
+
+              return (
+                <div key={quiz.id} className={styles.quizRow}>
+                  <div className={styles.rowMain}>
+                    <div className={styles.cardIconWrap}>
+                      H5P
+                    </div>
+                    <div className={styles.rowInfo}>
+                      <div className={styles.rowTitleWrap}>
+                        <h3 className={styles.cardTitle} title={quiz.title}>
+                          {quiz.title}
+                        </h3>
+                        <span className={styles.cardTheme}>
+                          {quiz.theme || 'Général'}
+                        </span>
+                      </div>
+
+                      <div className={styles.rowDetails}>
+                        <span className={styles.rowMetaItem}>
+                          <Layers style={{ width: 13, height: 13 }} />
+                          {qCount} question{qCount > 1 ? 's' : ''}
+                        </span>
+                        <span className={styles.rowDot}>•</span>
+                        <span 
+                          className={styles.rowMetaItem} 
+                          style={{ color: fbConfigured > 0 ? 'var(--color-success)' : 'var(--color-text-muted)' }}
+                        >
+                          <Brain style={{ width: 13, height: 13 }} />
+                          {fbConfigured > 0 ? `${fbConfigured} feedback${fbConfigured > 1 ? 's' : ''}` : 'À étayer'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.rowActions}>
+                    <button
+                      type="button"
+                      onClick={() => onSelectQuiz(quiz, 'feedback')}
+                      className={styles.btnActionPrimary}
+                      title={fbConfigured > 0 ? "Vérifier et ajuster les rétroactions" : "Étape 2 : Préparer le prompt IA"}
+                    >
+                      <Brain style={{ width: 14, height: 14 }} />
+                      <span>{fbConfigured > 0 ? 'Rétroactions' : 'Étape 2 : Prompt IA'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onSelectQuiz(quiz, 'play')}
+                      className={styles.btnActionIcon}
+                      title="Simuler et tester"
+                    >
+                      <Play style={{ width: 14, height: 14, fill: 'currentColor' }} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onExportQuiz(quiz)}
+                      className={styles.btnActionIcon}
+                      title="Étape 4 : Exporter et diffuser"
+                    >
+                      <Download style={{ width: 14, height: 14 }} />
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -167,83 +204,18 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
                           onDeleteQuiz(quiz.id);
                         }
                       }}
-                      className="text-slate-400 hover:text-red-600 transition-colors p-1 rounded-md cursor-pointer"
-                      title="Supprimer ce quiz"
+                      className={`${styles.btnActionIcon} ${styles.btnActionDelete}`}
+                      title="Supprimer"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 style={{ width: 14, height: 14 }} />
                     </button>
                   </div>
-
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 line-clamp-2 leading-snug group-hover:text-purple-900 transition-colors">
-                      {quiz.title}
-                    </h3>
-                    {quiz.description && (
-                      <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
-                        {quiz.description}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Badges de statut & feedbacks */}
-                  <div className="pt-2 flex flex-wrap items-center gap-2 text-xs">
-                    <span className="inline-flex items-center gap-1 text-slate-600 font-medium bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200 text-[11px]">
-                      <Layers className="w-3 h-3 text-slate-400" />
-                      {qCount} question(s)
-                    </span>
-
-                    <span className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md border text-[11px] ${
-                      fbConfigured > 0
-                        ? 'bg-purple-50 text-purple-700 border-purple-200'
-                        : 'bg-amber-50 text-amber-700 border-amber-200'
-                    }`}>
-                      <Brain className="w-3 h-3" />
-                      {fbConfigured > 0 ? `${fbConfigured} feedback(s) Pansu` : 'Feedbacks à configurer'}
-                    </span>
-                  </div>
                 </div>
-
-                {/* Barre de boutons d'action */}
-                <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-1.5 text-xs">
-                  
-                  {/* Tester / Jouer */}
-                  <button
-                    type="button"
-                    onClick={() => onSelectQuiz(quiz, 'play')}
-                    className="flex-1 py-1.5 px-2.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    title="Simuler et tester le quiz"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-current text-slate-800" />
-                    <span>Tester</span>
-                  </button>
-
-                  {/* Feedbacks Pansu */}
-                  <button
-                    type="button"
-                    onClick={() => onSelectQuiz(quiz, 'feedback')}
-                    className="flex-1 py-1.5 px-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
-                    title="Ouvrir le moteur de régulation Pascal Pansu"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Feedbacks</span>
-                  </button>
-
-                  {/* Export LogiQuiz */}
-                  <button
-                    type="button"
-                    onClick={() => onExportQuiz(quiz)}
-                    className="py-1.5 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
-                    title="Exporter le package H5P pour LogiQuiz & Digiquiz"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                  </button>
-
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
 
     </div>
   );
