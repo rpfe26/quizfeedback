@@ -142,9 +142,10 @@ textarea {
   resize: vertical;
 }
 
-/* DYS mode: only adjusts spacing, no visual theme */
+/* DYS mode: police adaptée (Lexend) + espacements, sans changer le thème */
 body.dys-mode {
   --line-height-base: 1.8;
   --letter-spacing-base: 0.03em;
   --word-spacing-base: 0.08em;
+  --font-family: 'Lexend', 'Trebuchet MS', 'Segoe UI', sans-serif;
 }
