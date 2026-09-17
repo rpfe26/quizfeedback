@@ -306,11 +306,40 @@ Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleu
 \`\`\``;
   }, [workingQuiz, questions]);
 
-  // Copier le prompt
-  const handleCopyPrompt = () => {
-    navigator.clipboard.writeText(generatedPromptText);
-    setCopiedPrompt(true);
-    setTimeout(() => setCopiedPrompt(false), 2500);
+  // Copier le prompt (API Clipboard + repli textarea pour HTTP hors localhost)
+  const handleCopyPrompt = async () => {
+    const fallbackCopy = () => {
+      const textarea = document.createElement('textarea');
+      textarea.value = generatedPromptText;
+      textarea.setAttribute('readonly', '');
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    };
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(generatedPromptText);
+      } else {
+        fallbackCopy();
+      }
+      setCopiedPrompt(true);
+      setTimeout(() => setCopiedPrompt(false), 2500);
+    } catch {
+      try {
+        fallbackCopy();
+        setCopiedPrompt(true);
+        setTimeout(() => setCopiedPrompt(false), 2500);
+      } catch {
+        setCopiedPrompt(false);
+      }
+    }
   };
 
   // Traiter la réponse IA
