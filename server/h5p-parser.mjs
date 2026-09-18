@@ -235,32 +235,60 @@ export function parseQuizWizardH5P(fileBufferOrJson, filename = 'quiz.h5p') {
     if (params.answers && Array.isArray(params.answers)) {
       answers = params.answers.map((a, aIdx) => {
         const isCorr = Boolean(a.correct !== undefined ? a.correct : a.isCorrect);
+        let rawFb = a.tipsAndFeedback?.chosenFeedback || a.feedback || '';
+        if (rawFb.includes('Rappel notionnel :') || rawFb.includes('h5p-notional-reminder')) {
+          const parts = rawFb.split(/(?:<div[^>]*class=["']h5p-notional-reminder["'][^>]*>|<strong>💡 Rappel notionnel\s*:<\/strong>)/i);
+          rawFb = parts[0];
+        }
         return {
           id: a.id || `ans_${qIdx + 1}_${aIdx + 1}`,
           text: cleanHtml(a.text || a.answer || `Option ${aIdx + 1}`),
           correct: isCorr,
-          feedback: cleanHtml(a.tipsAndFeedback?.chosenFeedback || a.feedback || '')
+          feedback: cleanHtml(rawFb)
         };
       });
     } else if (params.correct !== undefined) {
       // Vrai / Faux — H5P.TrueFalse utilise feedbackCorrect / feedbackWrong
-      const fbCorrect = cleanHtml(params.feedbackCorrect || '');
-      const fbWrong = cleanHtml(params.feedbackWrong || params.feedbackIncorrect || '');
+      let fbCorrect = params.feedbackCorrect || '';
+      let fbWrong = params.feedbackWrong || params.feedbackIncorrect || '';
+      if (fbCorrect.includes('Rappel notionnel :')) {
+        fbCorrect = fbCorrect.split(/💡\s*Rappel notionnel\s*:/i)[0];
+      }
+      if (fbWrong.includes('Rappel notionnel :')) {
+        fbWrong = fbWrong.split(/💡\s*Rappel notionnel\s*:/i)[0];
+      }
       const isTrueCorrect = Boolean(params.correct === 'true' || params.correct === true);
       answers = [
         {
           id: `ans_${qIdx + 1}_1`,
           text: 'Vrai',
           correct: isTrueCorrect,
-          feedback: isTrueCorrect ? fbCorrect : fbWrong
+          feedback: cleanHtml(isTrueCorrect ? fbCorrect : fbWrong)
         },
         {
           id: `ans_${qIdx + 1}_2`,
           text: 'Faux',
           correct: !isTrueCorrect,
-          feedback: !isTrueCorrect ? fbCorrect : fbWrong
+          feedback: cleanHtml(!isTrueCorrect ? fbCorrect : fbWrong)
         }
       ];
+    }
+
+    let parsedExplanation = cleanHtml(params.tipsAndFeedback?.overallFeedback || params.explanation || '');
+    if (!parsedExplanation && Array.isArray(params.overallFeedback) && params.overallFeedback[0]?.feedback) {
+      parsedExplanation = cleanHtml(params.overallFeedback[0].feedback).replace(/^💡\s*Rappel notionnel\s*:\s*/i, '');
+    }
+    if (!parsedExplanation) {
+      for (const a of (params.answers || [])) {
+        const rawFb = a.tipsAndFeedback?.chosenFeedback || a.feedback || '';
+        if (rawFb.includes('Rappel notionnel :')) {
+          const m = rawFb.match(/<strong>💡 Rappel notionnel\s*:<\/strong>\s*([^<]+)/i);
+          if (m && m[1]) {
+            parsedExplanation = cleanHtml(m[1]);
+            break;
+          }
+        }
+      }
     }
 
     normalizedQuestions.push({
@@ -268,7 +296,7 @@ export function parseQuizWizardH5P(fileBufferOrJson, filename = 'quiz.h5p') {
       question: qText,
       type: qType,
       answers,
-      explanation: cleanHtml(params.tipsAndFeedback?.overallFeedback || params.explanation || ''),
+      explanation: parsedExplanation,
       feedbackCorrect: cleanHtml(params.feedbackCorrect || ''),
       feedbackIncorrect: cleanHtml(params.feedbackIncorrect || params.feedbackWrong || '')
     });

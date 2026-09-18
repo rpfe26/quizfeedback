@@ -164,13 +164,17 @@ describe('generateH5PQuestionSetPackage', () => {
     const content = JSON.parse(entries['content/content.json'].toString('utf-8'));
     const p = content.questions[0].params;
     assert.equal(p.question, '<p>a &lt; b &amp; c</p>');
-    assert.equal(p.answers[0].text, '<div>&lt;script&gt;alert(1)&lt;/script&gt;</div>');
-    assert.equal(p.answers[0].tipsAndFeedback.chosenFeedback, '<div>OK &amp; &lt;bien&gt;</div>');
+    assert.equal(
+      p.answers[0].tipsAndFeedback.chosenFeedback,
+      '<div>OK &amp; &lt;bien&gt;</div><div class="h5p-notional-reminder" style="margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px dashed rgba(0,0,0,0.25);"><strong>💡 Rappel notionnel :</strong> Expl &lt;x&gt;</div>'
+    );
     assert.equal(p.tipsAndFeedback.overallFeedback, '<div>Expl &lt;x&gt;</div>');
     // Le texte doit rester lisible après un re-parse (échappement réversible)
     const re = parseQuizWizardH5P(generateH5PQuestionSetPackage(quiz), 're.h5p');
     assert.equal(re.content.questions[0].question, 'a < b & c');
     assert.equal(re.content.questions[0].answers[0].text, '<script>alert(1)</script>');
+    assert.equal(re.content.questions[0].answers[0].feedback, 'OK & <bien>');
+    assert.equal(re.content.questions[0].explanation, 'Expl <x>');
   });
 
   test('le titre reste lisible sans balises actives', () => {

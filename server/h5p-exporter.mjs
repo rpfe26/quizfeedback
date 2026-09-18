@@ -183,11 +183,24 @@ export function generateH5PQuestionSetPackage(quiz) {
   // Transformation des questions en blocs H5P (MultiChoice ou TrueFalse) avec rétroactions Pascal Pansu
   const h5pQuestions = questionsToExport.map((q, qIdx) => {
     const isTrueFalse = q.type === 'truefalse';
+    const hasExplanation = Boolean(q.explanation && q.explanation.trim());
+    const explanationHtml = hasExplanation
+      ? `<div class="h5p-notional-reminder" style="margin-top: 0.6rem; padding-top: 0.5rem; border-top: 1px dashed rgba(0,0,0,0.25);"><strong>💡 Rappel notionnel :</strong> ${escapeHtml(q.explanation.trim())}</div>`
+      : '';
+
     const qAnswers = (q.answers || []).map((ans, aIdx) => {
       const isCorrect = Boolean(ans.correct ?? ans.isCorrect);
-      const chosenFeedback = ans.feedback
-        ? `<div>${escapeHtml(ans.feedback)}</div>`
-        : '';
+      const hasFeedback = Boolean(ans.feedback && ans.feedback.trim());
+
+      let chosenFeedback = '';
+      if (hasFeedback && hasExplanation) {
+        chosenFeedback = `<div>${escapeHtml(ans.feedback.trim())}</div>${explanationHtml}`;
+      } else if (hasFeedback) {
+        chosenFeedback = `<div>${escapeHtml(ans.feedback.trim())}</div>`;
+      } else if (hasExplanation) {
+        chosenFeedback = explanationHtml;
+      }
+
       const notChosenFeedback = isCorrect
         ? (q.feedbackIncorrect ? `<div>${escapeHtml(q.feedbackIncorrect)}</div>` : '')
         : (q.feedbackCorrect ? `<div>${escapeHtml(q.feedbackCorrect)}</div>` : '');
@@ -207,6 +220,7 @@ export function generateH5PQuestionSetPackage(quiz) {
       // Vrai/Faux : H5P.TrueFalse attend un seul paramètre "correct" et des réponses fixes
       const correctAnswerText = q.answers?.find(a => a.correct || a.isCorrect)?.text || '';
       const correctIsTrue = correctAnswerText.toLowerCase().startsWith('v');
+      const reminderSuffix = hasExplanation ? `\n\n💡 Rappel notionnel : ${q.explanation.trim()}` : '';
       return {
         library: 'H5P.TrueFalse 1.6',
         params: {
@@ -224,8 +238,8 @@ export function generateH5PQuestionSetPackage(quiz) {
           tryAgainButtonLabel: 'Recommencer',
           trueLabel: 'Vrai',
           falseLabel: 'Faux',
-          feedbackCorrect: q.feedbackCorrect || '',
-          feedbackWrong: q.feedbackIncorrect || '',
+          feedbackCorrect: (q.feedbackCorrect || '') + (q.feedbackCorrect && hasExplanation ? '\n\n' : '') + (hasExplanation ? `💡 Rappel notionnel : ${q.explanation.trim()}` : ''),
+          feedbackWrong: (q.feedbackIncorrect || '') + (q.feedbackIncorrect && hasExplanation ? '\n\n' : '') + (hasExplanation ? `💡 Rappel notionnel : ${q.explanation.trim()}` : ''),
           l10n: {
             trueText: 'Vrai',
             falseText: 'Faux',
@@ -261,8 +275,15 @@ export function generateH5PQuestionSetPackage(quiz) {
           showSolutionButton: 'Voir la solution',
           tryAgainButton: 'Recommencer'
         },
+        overallFeedback: hasExplanation ? [
+          {
+            from: 0,
+            to: 100,
+            feedback: `<div><strong>💡 Rappel notionnel :</strong> ${escapeHtml(q.explanation.trim())}</div>`
+          }
+        ] : [],
         tipsAndFeedback: {
-          overallFeedback: q.explanation ? `<div>${escapeHtml(q.explanation)}</div>` : ''
+          overallFeedback: hasExplanation ? `<div>${escapeHtml(q.explanation.trim())}</div>` : ''
         }
       },
       subContentId: crypto.randomUUID()
