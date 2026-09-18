@@ -17,17 +17,10 @@ import styles from './QuizListManager.module.css';
 
 const NIVEAUX_CLASSE = [
   'Toutes',
-  '— Maternelle / Primaire —',
-  'TPS/PS', 'MS', 'GS',
-  'CP', 'CE1', 'CE2', 'CM1', 'CM2',
-  '— Collège —',
-  '6ème', '5ème', '4ème', '3ème',
-  '— Lycée —',
-  '2nde', '1ère', 'Terminale',
-  '— Voie professionnelle —',
-  'CAP (1re année)', 'CAP (2e année)', 'Bac Pro',
-  '— Enseignement supérieur —',
-  'BTS/BUT (1re année)', 'BTS/BUT (2e année)', 'Licence', 'Master/Ingénieur',
+  'Collège',
+  'Lycée',
+  'Bac professionnel',
+  'CAP',
 ];
 
 interface ImportMeta {

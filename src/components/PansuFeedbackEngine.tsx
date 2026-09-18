@@ -234,20 +234,17 @@ Adaptez impérativement le vocabulaire, la syntaxe et la longueur des phrases au
     const niveauDetails = (() => {
       if (!niveauClasse) return '- Utilisez un registre soutenu, précis et bienveillant adapté à un public scolaire général.';
       const n = niveauClasse.toLowerCase();
-      if (n.includes('cp') || n.includes('ce1') || n.includes('ce2') || n.includes('ps') || n.includes('ms') || n.includes('gs') || n.includes('tps')) {
-        return '- Utilisez des phrases très courtes (5 à 8 mots), un vocabulaire ultra-simple, concret et imagé.\n- Pas de termes abstraits. Préférez des analogies du quotidien de l\'enfant.\n- Ton chaleureux et encourageant, comme une approbation orale d\'un adulte bienveillant.\n- Tutoyez l\'élève.';
-      }
-      if (n.includes('cm1') || n.includes('cm2')) {
-        return '- Phrases courtes à moyennes (8 à 12 mots). Vocabulaire courant, légèrement enrichi.\n- Expliquez le pourquoi de l\'erreur de façon concrète, en liant à un exemple de la vie réelle.\n- Tutoyez l\'élève.';
-      }
-      if (['6ème', '5ème', '4ème', '3ème'].some(l => n.includes(l.toLowerCase()))) {
+      if (n === 'collège') {
         return '- Phrases de longueur moyenne (10 à 15 mots). Vocabulaire disciplinaire introduit progressivement.\n- Expliquez la méconception avec clarté, sans jargon excessif.\n- Tutoyez l\'élève (registre collégial).';
       }
-      if (['2nde', '1ère', 'terminale'].some(l => n.includes(l.toLowerCase()))) {
-        return '- Phrases précises, structurées (12 à 20 mots). Vocabulaire disciplinaire pleinement utilisé.\n- Donnez la clé de raisonnement manquante plutôt que la solution brute.\n- Vouvoyez ou utilisez l\'infinitif (registre lycée).';
+      if (n === 'lycée') {
+        return '- Phrases précises, structurées (12 à 20 mots). Vocabulaire disciplinaire pleinement utilisé.\n- Donnez la clé de raisonnement manquante plutôt que la solution brute.\n- Vouvoyez ou utilisez l\'infinitif (registre lycée général).';
       }
-      if (['bts', 'but', 'licence', 'master', 'bac pro', 'cap'].some(l => n.includes(l.toLowerCase()))) {
-        return '- Registre professionnel ou académique. Précision conceptuelle attendue.\n- Référencez si possible la notion ou la compétence exacte mobilisée.\n- Vouvoyez ou utilisez l\'infinitif. Style synthétique.';
+      if (n === 'bac professionnel') {
+        return '- Registre professionnel concret. Ancrez les feedbacks dans des situations de travail réelles ou des gestes professionnels.\n- Expliquez l\'erreur en lien avec la compétence professionnelle visée.\n- Vouvoyez ou utilisez l\'infinitif. Phrases claires et directes (12 à 18 mots).';
+      }
+      if (n === 'cap') {
+        return '- Registre simple et concret, orienté pratique professionnelle.\n- Phrases courtes (8 à 12 mots), vocabulaire du métier expliqué si nécessaire.\n- Expliquez l\'erreur par rapport à une règle ou un geste professionnel précis.\n- Vouvoyez ou utilisez l\'infinitif.';
       }
       return '- Utilisez un registre adapté au niveau scolaire indiqué, bienveillant et précis.';
     })();
