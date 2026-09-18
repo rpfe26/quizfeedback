@@ -26,7 +26,6 @@ const NIVEAUX_CLASSE = [
 interface ImportMeta {
   file: File;
   niveau_classe: string;
-  source_contenu: string;
 }
 
 interface QuizListManagerProps {
@@ -34,7 +33,7 @@ interface QuizListManagerProps {
   onSelectQuiz: (quiz: H5PQuiz, view: 'play' | 'feedback') => void;
   onExportQuiz: (quiz: H5PQuiz) => void;
   onDeleteQuiz: (quizId: string) => void;
-  onFileUpload: (file: File, meta?: { niveau_classe?: string; source_contenu?: string }) => void;
+  onFileUpload: (file: File, meta?: { niveau_classe?: string }) => void;
   isLoading?: boolean;
 }
 
@@ -51,7 +50,7 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const openImportModal = (file: File) => {
-    setImportPending({ file, niveau_classe: 'Toutes', source_contenu: '' });
+    setImportPending({ file, niveau_classe: 'Toutes' });
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -83,7 +82,6 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
     if (!importPending) return;
     onFileUpload(importPending.file, {
       niveau_classe: importPending.niveau_classe,
-      source_contenu: importPending.source_contenu,
     });
     setImportPending(null);
   };
@@ -95,12 +93,12 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
   return (
     <div className={styles.container}>
 
-      {/* Modale d'import : niveau de classe + source */}
+      {/* Modale d'import : niveau de classe */}
       {importPending && (
-        <div className={styles.importModalOverlay} role="dialog" aria-modal="true" aria-label="Configurer l'import du quiz">
+        <div className={styles.importModalOverlay} role="dialog" aria-modal="true" aria-label="Choisir le niveau du quiz">
           <div className={styles.importModalCard}>
             <h2 className={styles.importModalTitle}>
-              📂 Configurer l'import
+              📂 Choisir le niveau de classe
             </h2>
             <div className={styles.importModalFile}>
               {importPending.file.name}
@@ -122,33 +120,13 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
                     <option
                       key={n}
                       value={n}
-                      disabled={n.startsWith('—')}
                     >
                       {n}
                     </option>
                   ))}
                 </select>
                 <p className={styles.importModalHint}>
-                  Le niveau adapte le registre linguistique du prompt IA pour générer des feedbacks appropriés à l'âge des élèves.
-                </p>
-              </div>
-
-              {/* Source du contenu (Feedback+) */}
-              <div>
-                <label htmlFor="import-source" className={styles.importModalLabel}>
-                  Source du contenu
-                  <span className={styles.importModalLabelOptional}>(optionnel — Feedback+)</span>
-                </label>
-                <input
-                  id="import-source"
-                  type="text"
-                  className={styles.importModalInput}
-                  placeholder="Ex : https://... ou « Chapitre 4 — Manuel SVT 4e »"
-                  value={importPending.source_contenu}
-                  onChange={e => setImportPending(prev => prev ? { ...prev, source_contenu: e.target.value } : prev)}
-                />
-                <p className={styles.importModalHint}>
-                  La source est injectée dans le prompt IA pour que les feedbacks soient ancrés dans le document ou la ressource d'origine.
+                  Le niveau adapte automatiquement le registre linguistique du prompt IA (vocabulaire, syntaxe, tutoiement/vouvoiement).
                 </p>
               </div>
             </div>

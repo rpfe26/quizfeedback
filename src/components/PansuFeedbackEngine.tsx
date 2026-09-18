@@ -225,7 +225,6 @@ export const PansuFeedbackEngine: React.FC<PansuFeedbackEngineProps> = ({
     const niveauClasse = workingQuiz.niveau_classe && workingQuiz.niveau_classe !== 'Toutes'
       ? workingQuiz.niveau_classe
       : null;
-    const sourceContenu = workingQuiz.source_contenu?.trim() || null;
 
     // Adaptation du registre linguistique selon le niveau
     const niveauSection = niveauClasse ? `\n**Public cible : ${niveauClasse}**
@@ -249,8 +248,16 @@ Adaptez impérativement le vocabulaire, la syntaxe et la longueur des phrases au
       return '- Utilisez un registre adapté au niveau scolaire indiqué, bienveillant et précis.';
     })();
 
-    // Section Source (Feedback+)
-    const sourceSection = sourceContenu ? `\n---\n\n## 📚 SOURCE DE RÉFÉRENCE (Feedback+)\n\nLe quiz a été créé à partir de la ressource suivante :\n\n> **${sourceContenu}**\n\nVeuillez vous appuyer sur le contenu et les notions clés de cette source pour rédiger des feedbacks précis et ancrés dans le document de référence plutôt que dans des généralités disciplinaires. Chaque feedback de distracteur doit idéalement renvoyer à la logique de la source.` : '';
+    // Directives adaptatives pour les sources / ressources (Option Feedback+)
+    const sourceSection = `
+---
+
+## 📚 PRISE EN COMPTE DES RESSOURCES ET DU COURS (OPTION « FEEDBACK+ »)
+
+- **Si un document, support de cours, lien, texte ou fichier est joint ou mentionné dans cette conversation** :
+  Vous devez impérativement vous appuyer sur le contenu exact de cette ressource (définitions, exemples, règles, vocabulaire et démarches du cours) pour contextualiser et étayer précisément chaque feedback. Les rétroactions de distracteurs doivent faire directement référence aux éléments du document pour permettre à l'élève de faire le lien avec son cours.
+- **Si aucune ressource ni pièce jointe n'est fournie avec ce prompt** :
+  Rédigez les rétroactions à partir des connaissances fondamentales et attendus de référence du niveau ${niveauClasse ? `(niveau ${niveauClasse})` : 'scolaire concerné'}.`;
 
     const questionsListText = questions.map((q, qIdx) => {
       const answersText = (q.answers || []).map((a, aIdx) => {
@@ -673,6 +680,14 @@ Répondez UNIQUEMENT avec le bloc JSON suivant, sans texte avant ni après :
             </div>
 
             <AiAgentPicker />
+
+            {/* Note d'étayage Feedback+ */}
+            <div className={styles.feedbackPlusTip} role="note">
+              <Sparkles style={{ width: 18, height: 18, color: 'var(--color-primary)', flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
+              <div>
+                <strong>💡 Option Feedback+ :</strong> Pour obtenir des rétroactions encore plus personnalisées et fidèles à vos cours, vous pouvez <strong>joindre votre support (PDF, lien web, texte de cours, extrait de manuel...) directement en pièce jointe dans le chat de votre IA</strong> en même temps que vous y collez ce prompt. Le prompt est déjà conçu pour demander à l'IA d'exploiter la ressource si elle est présente.
+              </div>
+            </div>
 
             {/* Grille : 1. Prompt IA & 2. Réponse IA */}
             <div className={styles.promptAndResponseGrid}>
