@@ -9,17 +9,39 @@ import {
   FileQuestion,
   Wand2,
   ExternalLink,
-  Info
+  Info,
+  CheckCircle2
 } from 'lucide-react';
 import { H5PQuiz } from '../types';
 import styles from './QuizListManager.module.css';
+
+const NIVEAUX_CLASSE = [
+  'Toutes',
+  '— Maternelle / Primaire —',
+  'TPS/PS', 'MS', 'GS',
+  'CP', 'CE1', 'CE2', 'CM1', 'CM2',
+  '— Collège —',
+  '6ème', '5ème', '4ème', '3ème',
+  '— Lycée —',
+  '2nde', '1ère', 'Terminale',
+  '— Voie professionnelle —',
+  'CAP (1re année)', 'CAP (2e année)', 'Bac Pro',
+  '— Enseignement supérieur —',
+  'BTS/BUT (1re année)', 'BTS/BUT (2e année)', 'Licence', 'Master/Ingénieur',
+];
+
+interface ImportMeta {
+  file: File;
+  niveau_classe: string;
+  source_contenu: string;
+}
 
 interface QuizListManagerProps {
   quizzes: H5PQuiz[];
   onSelectQuiz: (quiz: H5PQuiz, view: 'play' | 'feedback') => void;
   onExportQuiz: (quiz: H5PQuiz) => void;
   onDeleteQuiz: (quizId: string) => void;
-  onFileUpload: (file: File) => void;
+  onFileUpload: (file: File, meta?: { niveau_classe?: string; source_contenu?: string }) => void;
   isLoading?: boolean;
 }
 
@@ -32,7 +54,12 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
   isLoading
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [importPending, setImportPending] = useState<ImportMeta | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const openImportModal = (file: File) => {
+    setImportPending({ file, niveau_classe: 'Toutes', source_contenu: '' });
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -47,19 +74,105 @@ export const QuizListManager: React.FC<QuizListManagerProps> = ({
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onFileUpload(e.dataTransfer.files[0]);
+      openImportModal(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      onFileUpload(e.target.files[0]);
+      openImportModal(e.target.files[0]);
     }
+    // Reset l'input pour pouvoir ré-importer le même fichier
+    e.target.value = '';
+  };
+
+  const handleImportConfirm = () => {
+    if (!importPending) return;
+    onFileUpload(importPending.file, {
+      niveau_classe: importPending.niveau_classe,
+      source_contenu: importPending.source_contenu,
+    });
+    setImportPending(null);
+  };
+
+  const handleImportCancel = () => {
+    setImportPending(null);
   };
 
   return (
     <div className={styles.container}>
-      
+
+      {/* Modale d'import : niveau de classe + source */}
+      {importPending && (
+        <div className={styles.importModalOverlay} role="dialog" aria-modal="true" aria-label="Configurer l'import du quiz">
+          <div className={styles.importModalCard}>
+            <h2 className={styles.importModalTitle}>
+              📂 Configurer l'import
+            </h2>
+            <div className={styles.importModalFile}>
+              {importPending.file.name}
+            </div>
+
+            <div className={styles.importModalFields}>
+              {/* Niveau de classe */}
+              <div>
+                <label htmlFor="import-niveau" className={styles.importModalLabel}>
+                  Niveau de classe cible
+                </label>
+                <select
+                  id="import-niveau"
+                  className={styles.importModalSelect}
+                  value={importPending.niveau_classe}
+                  onChange={e => setImportPending(prev => prev ? { ...prev, niveau_classe: e.target.value } : prev)}
+                >
+                  {NIVEAUX_CLASSE.map(n => (
+                    <option
+                      key={n}
+                      value={n}
+                      disabled={n.startsWith('—')}
+                    >
+                      {n}
+                    </option>
+                  ))}
+                </select>
+                <p className={styles.importModalHint}>
+                  Le niveau adapte le registre linguistique du prompt IA pour générer des feedbacks appropriés à l'âge des élèves.
+                </p>
+              </div>
+
+              {/* Source du contenu (Feedback+) */}
+              <div>
+                <label htmlFor="import-source" className={styles.importModalLabel}>
+                  Source du contenu
+                  <span className={styles.importModalLabelOptional}>(optionnel — Feedback+)</span>
+                </label>
+                <input
+                  id="import-source"
+                  type="text"
+                  className={styles.importModalInput}
+                  placeholder="Ex : https://... ou « Chapitre 4 — Manuel SVT 4e »"
+                  value={importPending.source_contenu}
+                  onChange={e => setImportPending(prev => prev ? { ...prev, source_contenu: e.target.value } : prev)}
+                />
+                <p className={styles.importModalHint}>
+                  La source est injectée dans le prompt IA pour que les feedbacks soient ancrés dans le document ou la ressource d'origine.
+                </p>
+              </div>
+            </div>
+
+            <div className={styles.importModalActions}>
+              <button type="button" className={styles.btnImportCancel} onClick={handleImportCancel}>
+                Annuler
+              </button>
+              <button type="button" className={styles.btnImportConfirm} onClick={handleImportConfirm}>
+                <CheckCircle2 style={{ width: 15, height: 15 }} aria-hidden="true" />
+                Importer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Vignette : création du quiz sur Quiz Wizard */}
       <div className={styles.wizardCard}>
         <div className={styles.wizardCardIconWrap}>

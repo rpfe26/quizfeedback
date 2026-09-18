@@ -157,6 +157,8 @@ const server = http.createServer(async (req, res) => {
             type: r.type,
             title: r.title,
             theme: r.theme,
+            niveau_classe: r.classe_cible || 'Toutes',
+            source_contenu: r.source_contenu || '',
             description: r.description,
             content,
             options,
@@ -190,6 +192,8 @@ const server = http.createServer(async (req, res) => {
         type: row.type,
         title: row.title,
         theme: row.theme,
+        niveau_classe: row.classe_cible || 'Toutes',
+        source_contenu: row.source_contenu || '',
         description: row.description,
         content,
         options,
@@ -199,7 +203,7 @@ const server = http.createServer(async (req, res) => {
 
     // POST /api/h5p/upload ou /api/h5p/import : Importation H5P ou JSON
     if ((pathname === '/api/h5p/upload' || pathname === '/api/h5p/import') && req.method === 'POST') {
-      const { base64File, filename, rawJson, title, theme, options } = body;
+      const { base64File, filename, rawJson, title, theme, niveau_classe, source_contenu, options } = body;
       let parsed;
 
       try {
@@ -229,6 +233,8 @@ const server = http.createServer(async (req, res) => {
       const quizId = `qf_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 4)}`;
       const finalTitle = (title && title.trim()) || parsed.title || 'Quiz H5P';
       const finalTheme = (theme && theme.trim()) || parsed.theme || 'Général';
+      const finalNiveau = (niveau_classe && niveau_classe.trim()) || 'Toutes';
+      const finalSource = (source_contenu && source_contenu.trim()) || '';
       const finalOptions = { ...parsed.options, ...(options || {}) };
 
       // Refuser les imports sans contenu exploitable plutôt que créer un quiz vide
@@ -239,14 +245,15 @@ const server = http.createServer(async (req, res) => {
       }
 
       db.prepare(`
-        INSERT INTO h5p_quizzes (id, type, title, theme, classe_cible, description, content_json, options_json)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO h5p_quizzes (id, type, title, theme, classe_cible, source_contenu, description, content_json, options_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         quizId,
         parsed.type || 'quiz',
         finalTitle,
         finalTheme,
-        'Toutes',
+        finalNiveau,
+        finalSource,
         parsed.description || '',
         JSON.stringify(parsed.content),
         JSON.stringify(finalOptions)
@@ -257,6 +264,8 @@ const server = http.createServer(async (req, res) => {
         type: parsed.type || 'quiz',
         title: finalTitle,
         theme: finalTheme,
+        niveau_classe: finalNiveau,
+        source_contenu: finalSource,
         description: parsed.description,
         content: parsed.content,
         options: finalOptions,
@@ -272,19 +281,21 @@ const server = http.createServer(async (req, res) => {
       const row = db.prepare('SELECT * FROM h5p_quizzes WHERE id = ?').get(quizId);
       if (!row) return sendError(res, 'Quiz introuvable', 404);
 
-      const { title, theme, description, content, options } = body;
+      const { title, theme, niveau_classe, source_contenu, description, content, options } = body;
 
       const newTitle = (title && title.trim()) || row.title;
       const newTheme = (theme && theme.trim()) || row.theme;
+      const newNiveau = (niveau_classe !== undefined) ? (niveau_classe.trim() || row.classe_cible) : row.classe_cible;
+      const newSource = (source_contenu !== undefined) ? source_contenu.trim() : (row.source_contenu || '');
       const newDesc = description !== undefined ? description : row.description;
       const newContent = content ? JSON.stringify(content) : row.content_json;
       const newOptions = options ? JSON.stringify(options) : row.options_json;
 
       db.prepare(`
         UPDATE h5p_quizzes
-        SET title = ?, theme = ?, classe_cible = 'Toutes', description = ?, content_json = ?, options_json = ?
+        SET title = ?, theme = ?, classe_cible = ?, source_contenu = ?, description = ?, content_json = ?, options_json = ?
         WHERE id = ?
-      `).run(newTitle, newTheme, newDesc, newContent, newOptions, quizId);
+      `).run(newTitle, newTheme, newNiveau, newSource, newDesc, newContent, newOptions, quizId);
 
       return sendJson(res, {
         success: true,
@@ -293,6 +304,8 @@ const server = http.createServer(async (req, res) => {
           type: row.type,
           title: newTitle,
           theme: newTheme,
+          niveau_classe: newNiveau,
+          source_contenu: newSource,
           description: newDesc,
           content: content || JSON.parse(row.content_json),
           options: options || JSON.parse(row.options_json)

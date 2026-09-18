@@ -102,7 +102,7 @@ export const App: React.FC = () => {
     showNotification('Quiz supprimé.');
   };
 
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = async (file: File, meta?: { niveau_classe?: string; source_contenu?: string }) => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64 = e.target?.result as string;
@@ -112,7 +112,9 @@ export const App: React.FC = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             base64File: base64,
-            filename: file.name
+            filename: file.name,
+            niveau_classe: meta?.niveau_classe || 'Toutes',
+            source_contenu: meta?.source_contenu || ''
           })
         });
 

@@ -28,6 +28,7 @@ try {
       title TEXT NOT NULL,
       theme TEXT NOT NULL DEFAULT 'Général',
       classe_cible TEXT NOT NULL DEFAULT 'Toutes',
+      source_contenu TEXT,
       description TEXT,
       content_json TEXT NOT NULL,
       options_json TEXT NOT NULL,
@@ -49,6 +50,12 @@ try {
 
     CREATE INDEX IF NOT EXISTS idx_h5p_attempts_quiz ON h5p_attempts(quiz_id);
   `);
+
+  // Migration pour les bases existantes qui n'auraient pas encore source_contenu
+  try {
+    dbInstance.exec(`ALTER TABLE h5p_quizzes ADD COLUMN source_contenu TEXT`);
+  } catch (_) { /* colonne déjà présente — OK */ }
+
   console.log('[QuizFeedback DB] Base SQLite initialisée avec succès');
 } catch (err) {
   console.warn('[QuizFeedback DB] SQLite natif indisponible, utilisation du stockage JSON en mémoire/fichier:', err.message);
@@ -96,19 +103,19 @@ try {
         },
         run(...params) {
           if (sql.includes('INSERT INTO h5p_quizzes')) {
-            const [id, type, title, theme, classe, desc, content_json, options_json] = params;
+            const [id, type, title, theme, classe, source, desc, content_json, options_json] = params;
             memoryData.quizzes.unshift({
-              id, type, title, theme, classe_cible: classe, description: desc,
+              id, type, title, theme, classe_cible: classe, source_contenu: source, description: desc,
               content_json, options_json, created_at: new Date().toISOString()
             });
             persist();
           } else if (sql.includes('UPDATE h5p_quizzes')) {
-            const [title, theme, classe, desc, content_json, options_json, id] = params;
+            const [title, theme, classe, source, desc, content_json, options_json, id] = params;
             const idx = memoryData.quizzes.findIndex(q => q.id === id);
             if (idx !== -1) {
               memoryData.quizzes[idx] = {
                 ...memoryData.quizzes[idx],
-                title, theme, classe_cible: classe, description: desc,
+                title, theme, classe_cible: classe, source_contenu: source, description: desc,
                 content_json, options_json, updated_at: new Date().toISOString()
               };
               persist();

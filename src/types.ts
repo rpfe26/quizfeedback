@@ -48,6 +48,10 @@ export interface H5PQuiz {
   type: 'quiz' | 'flashcards';
   title: string;
   theme?: string;
+  /** Niveau de classe cible (ex. : "6ème", "Terminale", "BTS/BUT"). Adapte le registre du prompt IA. */
+  niveau_classe?: string;
+  /** Source du contenu ayant servi à créer le quiz (URL, titre de manuel, etc.). Enrichit le prompt IA. */
+  source_contenu?: string;
   description?: string;
   content: {
     questions?: H5PQuestion[];

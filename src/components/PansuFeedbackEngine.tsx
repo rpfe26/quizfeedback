@@ -222,9 +222,42 @@ export const PansuFeedbackEngine: React.FC<PansuFeedbackEngineProps> = ({
 
   // Génération dynamique du prompt pédagogique Pascal Pansu
   const generatedPromptText = useMemo(() => {
+    const niveauClasse = workingQuiz.niveau_classe && workingQuiz.niveau_classe !== 'Toutes'
+      ? workingQuiz.niveau_classe
+      : null;
+    const sourceContenu = workingQuiz.source_contenu?.trim() || null;
+
+    // Adaptation du registre linguistique selon le niveau
+    const niveauSection = niveauClasse ? `\n**Public cible : ${niveauClasse}**
+Adaptez impérativement le vocabulaire, la syntaxe et la longueur des phrases au niveau cognitif et langagier d'un·e élève de ${niveauClasse}.` : '';
+
+    const niveauDetails = (() => {
+      if (!niveauClasse) return '- Utilisez un registre soutenu, précis et bienveillant adapté à un public scolaire général.';
+      const n = niveauClasse.toLowerCase();
+      if (n.includes('cp') || n.includes('ce1') || n.includes('ce2') || n.includes('ps') || n.includes('ms') || n.includes('gs') || n.includes('tps')) {
+        return '- Utilisez des phrases très courtes (5 à 8 mots), un vocabulaire ultra-simple, concret et imagé.\n- Pas de termes abstraits. Préférez des analogies du quotidien de l\'enfant.\n- Ton chaleureux et encourageant, comme une approbation orale d\'un adulte bienveillant.\n- Tutoyez l\'élève.';
+      }
+      if (n.includes('cm1') || n.includes('cm2')) {
+        return '- Phrases courtes à moyennes (8 à 12 mots). Vocabulaire courant, légèrement enrichi.\n- Expliquez le pourquoi de l\'erreur de façon concrète, en liant à un exemple de la vie réelle.\n- Tutoyez l\'élève.';
+      }
+      if (['6ème', '5ème', '4ème', '3ème'].some(l => n.includes(l.toLowerCase()))) {
+        return '- Phrases de longueur moyenne (10 à 15 mots). Vocabulaire disciplinaire introduit progressivement.\n- Expliquez la méconception avec clarté, sans jargon excessif.\n- Tutoyez l\'élève (registre collégial).';
+      }
+      if (['2nde', '1ère', 'terminale'].some(l => n.includes(l.toLowerCase()))) {
+        return '- Phrases précises, structurées (12 à 20 mots). Vocabulaire disciplinaire pleinement utilisé.\n- Donnez la clé de raisonnement manquante plutôt que la solution brute.\n- Vouvoyez ou utilisez l\'infinitif (registre lycée).';
+      }
+      if (['bts', 'but', 'licence', 'master', 'bac pro', 'cap'].some(l => n.includes(l.toLowerCase()))) {
+        return '- Registre professionnel ou académique. Précision conceptuelle attendue.\n- Référencez si possible la notion ou la compétence exacte mobilisée.\n- Vouvoyez ou utilisez l\'infinitif. Style synthétique.';
+      }
+      return '- Utilisez un registre adapté au niveau scolaire indiqué, bienveillant et précis.';
+    })();
+
+    // Section Source (Feedback+)
+    const sourceSection = sourceContenu ? `\n---\n\n## 📚 SOURCE DE RÉFÉRENCE (Feedback+)\n\nLe quiz a été créé à partir de la ressource suivante :\n\n> **${sourceContenu}**\n\nVeuillez vous appuyer sur le contenu et les notions clés de cette source pour rédiger des feedbacks précis et ancrés dans le document de référence plutôt que dans des généralités disciplinaires. Chaque feedback de distracteur doit idéalement renvoyer à la logique de la source.` : '';
+
     const questionsListText = questions.map((q, qIdx) => {
       const answersText = (q.answers || []).map((a, aIdx) => {
-        const flag = a.correct ? '[✓ BONNE RÉPONSE]' : '[✗ MAUVAISE RÉPONSE / DISTRACTEUR]';
+        const flag = a.correct ? '[✓ BONNE RÉPONSE]' : '[✗ DISTRACTEUR]';
         return `  - ${flag} (id: "${a.id}") : "${a.text}"`;
       }).join('\n');
 
@@ -236,68 +269,101 @@ ${answersText}
 Explication actuelle : ${q.explanation || 'Aucune'}`;
     }).join('\n\n');
 
-    return `# DIRECTIVES PÉDAGOGIQUES : RÉDACTION DES RÉTROACTIONS SELON LA LOGIQUE DE PASCAL PANSU (ÉVALUATION FORMATIVE)
+    return `# MISSION : RÉDACTION DES RÉTROACTIONS FORMATIVES (LOGIQUE PASCAL PANSU)
 
-Vous êtes un expert de référence en sciences de l'éducation et en psychologie cognitive scolaire, spécialisé dans l'évaluation formative et la régulation des comportements d'apprentissage d'après les travaux scientifiques de Pascal Pansu (notamment Georges & Pansu, 2011 ; Pansu & Sarrazin).
+Vous êtes un expert en sciences de l'éducation, spécialisé dans l'évaluation formative et la régulation de l'apprentissage d'après les travaux de **Pascal Pansu** (Pansu & Sarrazin, 2007 ; Georges & Pansu, 2011).
 
-Votre mission est de rédiger un feedback pédagogique personnalisé pour CHAQUE mauvaise réponse (distracteur) et pour CHAQUE bonne réponse du quiz ci-dessous.
+Votre mission est de rédiger un **feedback pédagogique de haute valeur formative** pour chaque proposition du quiz ci-dessous — bonne réponse comme distracteur.
 
-Ces feedbacks seront directement intégrés dans un package H5P Question Set pour LogiQuiz / Digiquiz (La Digitale) afin de fournir à chaque élève un retour immédiat et étayé dès qu'il clique sur une proposition.
-
----
-
-## RÈGLES IMPÉRATIVES DE CONCEPTION DES FEEDBACKS (LOGIQUE DE PASCAL PANSU) :
-
-1. FEEDBACK ÉLABORÉ À HAUTE VALEUR INFORMATIVE (Feed-up, Feed-back, Feed-forward) :
-   - Proscrire impérativement les verdicts binaires ou sanctions non formatives ("Faux", "Non", "Incorrect", "Perdu", "Mauvais choix").
-   - Expliciter clairement POURQUOI ce distracteur est erroné : identifier la méconception sous-jacente, le contresens ou le piège récurrent qui a rendu ce choix tentant.
-
-2. ATTRIBUTION CAUSALE INTERNE ET CONTRÔLABLE (Pansu & Sarrazin) :
-   - Préserver l'estime de soi et le sentiment d'efficacité personnelle (SEP) de l'élève.
-   - Attribuer la difficulté à des facteurs modifiables et sous le contrôle direct de l'élève : l'attention portée aux indices de l'énoncé, la méthode de calcul, la stratégie de lecture, l'étape de vérification.
-   - Bannir tout jugement sur la personne ou sur ses capacités intellectuelles globales.
-
-3. ÉTAYAGE (SCAFFOLDING) ET ACTIONNABILITÉ SANS SURCHARGE COGNITIVE :
-   - Fournir un indice ou une relance constructive permettant à l'élève de comprendre la bonne démarche sans donner brutalement la solution.
-   - Rester concis : 1 à 2 phrases percutantes par réponse (environ 20 à 35 mots maximum).
-
-4. ADAPTATION SELON LA NATURE DE LA PROPOSITION :
-   - Bonne réponse : valoriser le raisonnement exact et justifier succinctement pourquoi c'est la réponse attendue pour consolider l'ancrage mnésique.
-   - Distracteur : identifier l'erreur fréquente (confusion de dates, calcul incomplet, faux ami lexical) et donner la clé de distinction.
+Ces feedbacks seront intégrés directement dans un package H5P pour DigiQuiz / LogiQuiz, et s'afficheront à l'élève **au moment où il clique sur sa réponse**.${niveauSection}
+${sourceSection}
 
 ---
 
-## STRUCTURE DU QUIZ À TRAITER :
-Titre du quiz : ${workingQuiz.title}
-Thème : ${workingQuiz.theme || 'Général'}
-Description / Contexte : ${workingQuiz.description || 'Non spécifié'}
-Nombre de questions : ${questions.length}
+## CADRE PÉDAGOGIQUE : LES 3 NIVEAUX DE FEEDBACK (HATTIE & TIMPERLEY, 2007 — appliqués par Pansu)
+
+Chaque feedback doit répondre, même implicitement, à ces trois questions :
+
+| Niveau | Question | Objectif |
+|--------|----------|----------|
+| **Feed-up** | Quel est l'objectif visé ? | Rappeler la cible d'apprentissage |
+| **Feed-back** | Où en est l'élève ? | Identifier précisément l'erreur ou la réussite |
+| **Feed-forward** | Comment progresser ? | Donner une piste d'action concrète et contrôlable |
+
+---
+
+## RÈGLES IMPÉRATIVES (LOGIQUE PANSU)
+
+### 1. Proscription totale du verdict binaire
+- ❌ JAMAIS : "Faux", "Incorrect", "Mauvaise réponse", "Non", "Perdu", "Erreur".
+- ✅ À LA PLACE : Nommez l'erreur (quelle méconception ?), expliquez pourquoi ce choix est tentant, orientez vers le bon raisonnement.
+
+### 2. Attribution causale interne et contrôlable (Weiner / Pansu)
+- L'erreur s'explique par des facteurs **modifiables** : une stratégie de lecture, une confusion de concepts, une étape de vérification oubliée. JAMAIS par un manque d'intelligence ou de capacité.
+- Formulations recommandées : *"Il est facile de confondre..."*, *"L'énoncé attire l'attention sur..."*, *"En relisant attentivement..."*, *"La clé est de distinguer..."*.
+
+### 3. Préservation du sentiment d'efficacité personnelle (SEP)
+- Reformuler l'erreur comme une étape normale du processus d'apprentissage, pas comme un échec.
+- Valoriser la démarche tentée, même incorrecte, avant de pointer la méconception.
+
+### 4. Étayage (scaffolding) — Actionnable et sans surcharge cognitive
+- Fournir un **indice de relance** permettant à l'élève de progresser par lui-même, sans donner brutalement la solution.
+- **Longueur cible : 20 à 40 mots** par feedback (1 à 2 phrases percutantes).
+
+### 5. Adaptation du registre linguistique
+${niveauDetails}
+
+### 6. Feedback pour la bonne réponse (consolidation)
+- Féliciter le raisonnement **exact** (pas juste le résultat).
+- Expliquer succinctement **pourquoi** c'est la réponse attendue pour consolider l'ancrage mémoriel.
+- Ajouter un élément de **feed-forward** : une nuance, un approfondissement, un lien avec la suite du cours.
+
+---
+
+## EXEMPLES DE FORMULATIONS PANSU (à adapter)
+
+**Distracteur (mauvaise réponse) :**
+> *"Il est courant de confondre [concept A] et [concept B] car ils partagent [point commun]. La différence décisive est [clé de distinction]. En relisant la définition de [concept A], tu retrouveras la bonne piste."*
+
+**Bonne réponse :**
+> *"C'est bien ça ! Tu as repéré que [élément clé] est déterminant ici. Ce raisonnement s'applique aussi chaque fois que [généralisation utile]."*
+
+---
+
+## STRUCTURE DU QUIZ À TRAITER
+
+**Titre :** ${workingQuiz.title}
+**Thème :** ${workingQuiz.theme || 'Général'}
+**Niveau :** ${niveauClasse || 'Non spécifié'}
+**Description / Contexte :** ${workingQuiz.description || 'Non spécifié'}
+**Nombre de questions :** ${questions.length}
 
 ${questionsListText}
 
 ---
 
-## FORMAT DE RÉPONSE STRICT ATTENDU (À FOURNIR DANS UN BLOC \`\`\`json ... \`\`\`) :
-Veuillez répondre UNIQUEMENT avec un objet JSON structuré respectant scrupuleusement le schéma ci-dessous :
+## FORMAT DE RÉPONSE STRICT (bloc JSON uniquement)
+
+Répondez UNIQUEMENT avec le bloc JSON suivant, sans texte avant ni après :
 
 \`\`\`json
 {
   "questions": [
     {
       "questionId": "q_1",
-      "feedbackCorrect": "Félicitations ! Tu as bien appliqué la règle... (1 phrase valorisante)",
-      "feedbackIncorrect": "Attention aux indices de l'énoncé... (1 phrase d'encouragement méthodologique)",
-      "explanation": "Rappel de cours essentiel résumant la notion...",
+      "feedbackCorrect": "Félicitations ! Tu as bien identifié que... (1 à 2 phrases valorisant le raisonnement exact)",
+      "feedbackIncorrect": "Attention, il est facile de... (1 phrase d'orientation méthodologique)",
+      "explanation": "Rappel de cours synthétique sur la notion clé...",
       "answers": [
         {
           "id": "ans_1_1",
-          "text": "Texte exact de l'option 1",
-          "feedback": "Feedback personnalisé selon la logique de Pascal Pansu..."
+          "text": "Texte exact de la proposition 1",
+          "feedback": "Feedback personnalisé Pansu — 20 à 40 mots — adapté au niveau ${niveauClasse || 'scolaire'}"
         },
         {
           "id": "ans_1_2",
-          "text": "Texte exact de l'option 2",
-          "feedback": "Feedback personnalisé explicitant la méconception..."
+          "text": "Texte exact de la proposition 2",
+          "feedback": "Feedback explicite sur la méconception — attribution causale interne — étayage bienveillant"
         }
       ]
     }
